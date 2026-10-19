@@ -2246,6 +2246,87 @@ impl TSLiteralType<'_> {
     }
 }
 
+impl TSDistributeType<'_> {
+    /// Get [`NodeId`] of [`TSDistributeType`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`TSDistributeType`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+
+    /// Get [`ScopeId`] of [`TSDistributeType`].
+    ///
+    /// Only use this method on a post-semantic AST where [`ScopeId`]s are always defined.
+    ///
+    /// # Panics
+    /// Panics if `scope_id` is [`None`].
+    #[inline]
+    pub fn scope_id(&self) -> ScopeId {
+        self.scope_id.get().unwrap()
+    }
+
+    /// Set [`ScopeId`] of [`TSDistributeType`].
+    #[inline]
+    pub fn set_scope_id(&self, scope_id: ScopeId) {
+        self.scope_id.set(Some(scope_id));
+    }
+}
+
+impl TSTypeReturn<'_> {
+    /// Get [`NodeId`] of [`TSTypeReturn`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`TSTypeReturn`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
+impl TSProvideDeclaration<'_> {
+    /// Get [`NodeId`] of [`TSProvideDeclaration`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`TSProvideDeclaration`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
+impl TSTypeFromDeclaration<'_> {
+    /// Get [`NodeId`] of [`TSTypeFromDeclaration`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`TSTypeFromDeclaration`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
 impl TSConditionalType<'_> {
     /// Get [`NodeId`] of [`TSConditionalType`].
     ///
@@ -3916,6 +3997,8 @@ impl Statement<'_> {
             Self::TSNamespaceDeclaration(it) => it.node_id(),
             Self::TSGlobalDeclaration(it) => it.node_id(),
             Self::TSImportEqualsDeclaration(it) => it.node_id(),
+            Self::TSProvideDeclaration(it) => it.node_id(),
+            Self::TSTypeFromDeclaration(it) => it.node_id(),
             Self::ImportDeclaration(it) => it.node_id(),
             Self::ExportAllDeclaration(it) => it.node_id(),
             Self::ExportDefaultDeclaration(it) => it.node_id(),
@@ -3944,6 +4027,8 @@ impl Declaration<'_> {
             Self::TSNamespaceDeclaration(it) => it.node_id(),
             Self::TSGlobalDeclaration(it) => it.node_id(),
             Self::TSImportEqualsDeclaration(it) => it.node_id(),
+            Self::TSProvideDeclaration(it) => it.node_id(),
+            Self::TSTypeFromDeclaration(it) => it.node_id(),
         }
     }
 }
@@ -4430,6 +4515,8 @@ impl TSType<'_> {
             Self::JSDocNullableType(it) => it.node_id(),
             Self::JSDocNonNullableType(it) => it.node_id(),
             Self::JSDocUnknownType(it) => it.node_id(),
+            Self::TSDistributeType(it) => it.node_id(),
+            Self::TSTypeReturn(it) => it.node_id(),
         }
     }
 }
@@ -4479,6 +4566,8 @@ impl TSTupleElement<'_> {
             Self::JSDocNullableType(it) => it.node_id(),
             Self::JSDocNonNullableType(it) => it.node_id(),
             Self::JSDocUnknownType(it) => it.node_id(),
+            Self::TSDistributeType(it) => it.node_id(),
+            Self::TSTypeReturn(it) => it.node_id(),
         }
     }
 }

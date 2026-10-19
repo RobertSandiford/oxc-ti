@@ -288,6 +288,93 @@ pub enum TSType<'a> {
     JSDocNullableType(Box<'a, JSDocNullableType<'a>>) = 35,
     JSDocNonNullableType(Box<'a, JSDocNonNullableType<'a>>) = 36,
     JSDocUnknownType(Box<'a, JSDocUnknownType>) = 37,
+    // TightScript
+    TSDistributeType(Box<'a, TSDistributeType<'a>>) = 38,
+    TSTypeReturn(Box<'a, TSTypeReturn<'a>>) = 39,
+}
+
+/// TightScript `distribute` type.
+///
+/// ## Example
+/// ```ts
+/// type D1<U> = distribute U as U[];
+/// type D2<U> = distribute U M as { m: M };
+/// //                        ^ member
+/// ```
+#[ast(visit)]
+#[scope]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, ReplaceWith, TakeIn)]
+#[generate_derive(ContentEq, ESTree, GetNodeId, GetSpan, GetSpanMut, UnstableAddress)]
+pub struct TSDistributeType<'a> {
+    pub node_id: Cell<NodeId>,
+    pub span: Span,
+    /// The union distributed over, `U` in `distribute U as U[]`.
+    pub source: TSType<'a>,
+    /// The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    #[scope(enter_before)]
+    pub member: Option<Box<'a, TSTypeParameter<'a>>>,
+    /// The type built from each member.
+    pub body: TSType<'a>,
+    pub scope_id: Cell<Option<ScopeId>>,
+}
+
+/// TightScript type return: a function returning a type.
+///
+/// ## Example
+/// ```ts
+/// function f<G>(v: G): type Box<G> {}
+/// function g<G>(v: G): boolean and type Box<G> { return true; }
+/// //                   ^^^^^^^ value_type
+/// ```
+#[ast(visit)]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, ReplaceWith, TakeIn)]
+#[generate_derive(ContentEq, ESTree, GetNodeId, GetSpan, GetSpanMut, UnstableAddress)]
+pub struct TSTypeReturn<'a> {
+    pub node_id: Cell<NodeId>,
+    pub span: Span,
+    /// The ordinary return type before `and`, if any.
+    pub value_type: Option<TSType<'a>>,
+    /// The type that is returned.
+    pub type_annotation: TSType<'a>,
+}
+
+/// TightScript `provide` statement in a function body.
+///
+/// ## Example
+/// ```ts
+/// provide Box<string>      // type_annotation
+/// provide type B = Box<T>  // type_alias
+/// provide type G from      // type_from, naming the statement after it
+/// provide from             // none of them
+/// ```
+#[ast(visit)]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, ReplaceWith, TakeIn)]
+#[generate_derive(ContentEq, ESTree, GetNodeId, GetSpan, GetSpanMut, UnstableAddress)]
+pub struct TSProvideDeclaration<'a> {
+    pub node_id: Cell<NodeId>,
+    pub span: Span,
+    pub type_annotation: Option<TSType<'a>>,
+    pub type_alias: Option<Box<'a, TSTypeAliasDeclaration<'a>>>,
+    pub type_from: Option<Box<'a, TSTypeFromDeclaration<'a>>>,
+}
+
+/// TightScript `type Name from`, which names the type returned by the statement after it.
+///
+/// ## Example
+/// ```ts
+/// export type R from f(1);
+/// ```
+#[ast(visit)]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, ReplaceWith, TakeIn)]
+#[generate_derive(ContentEq, ESTree, GetNodeId, GetSpan, GetSpanMut, UnstableAddress)]
+pub struct TSTypeFromDeclaration<'a> {
+    pub node_id: Cell<NodeId>,
+    pub span: Span,
+    pub id: BindingIdentifier<'a>,
 }
 
 /// TypeScript Conditional Type
@@ -404,11 +491,20 @@ pub struct TSTypeOperator<'a> {
     pub node_id: Cell<NodeId>,
     pub span: Span,
     pub operator: TSTypeOperatorOperator,
+    /// TightScript: `lazy` before a permission, as in `lazy read T`.
+    #[estree(skip)]
+    pub lazy: bool,
+    /// TightScript: the sign before a permission or `owned`/`exact`, as in `+rw T` or `-exact T`.
+    #[estree(skip)]
+    pub sign: Option<TSPermissionSign>,
     /// The type being operated on
     pub type_annotation: TSType<'a>,
 }
 
 /// Operator in a [`TSTypeOperator`].
+///
+/// Variants after `Readonly` are TightScript operators. Short permission spellings
+/// (`r`, `rw`, ...) are separate variants so the source spelling can be printed back.
 #[ast]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[generate_derive(CloneIn, Dummy, ContentEq, ESTree)]
@@ -416,6 +512,36 @@ pub enum TSTypeOperatorOperator {
     Keyof = 0,
     Unique = 1,
     Readonly = 2,
+    Read = 3,
+    Write = 4,
+    Delete = 5,
+    ReadWrite = 6,
+    ReadDelete = 7,
+    WriteDelete = 8,
+    ReadWriteDelete = 9,
+    None = 10,
+    All = 11,
+    R = 12,
+    W = 13,
+    D = 14,
+    Rw = 15,
+    Rd = 16,
+    Wd = 17,
+    Rwd = 18,
+    Owned = 19,
+    Exact = 20,
+    Transient = 21,
+    Deep = 22,
+}
+
+/// TightScript: the sign before a permission (`+rw`, `-write`, `=rw`) or before `owned`/`exact` (`-exact`).
+#[ast]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[generate_derive(CloneIn, Dummy, ContentEq, ESTree)]
+pub enum TSPermissionSign {
+    Plus = 0,
+    Minus = 1,
+    Equals = 2,
 }
 
 /// TypeScript Array Type
@@ -501,6 +627,10 @@ pub struct TSNamedTupleMember<'a> {
     pub label: IdentifierName<'a>,
     pub element_type: TSTupleElement<'a>,
     pub optional: bool,
+    /// TightScript permission modifier, as in `[read a: string]`. Always a permission variant.
+    #[builder(default)]
+    #[estree(skip)]
+    pub permission: Option<TSTypeOperatorOperator>,
 }
 
 /// TypeScript Optional Type
@@ -883,6 +1013,34 @@ pub struct TSTypeParameter<'a> {
     pub out: bool,
     /// Was a `const` modifier keyword present?
     pub r#const: bool,
+    /// TightScript: an `owned` hint, as in `<owned T>`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub owned: bool,
+    /// TightScript: an `exact` hint, as in `<exact T>`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub exact: bool,
+    /// TightScript: the `exact` hint is `exact?`, as in `<exact? T>`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub exact_optional: bool,
+    /// TightScript: the permission in `<deep rw T>`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub deep_permission: Option<TSTypeOperatorOperator>,
+    /// TightScript: the `deep` permission is `lazy`, as in `<lazy deep rwd T>`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub deep_lazy: bool,
+    /// TightScript: `as exact` before the constraint, as in `<T as exact extends C>`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub as_exact: bool,
+    /// TightScript: the `as exact` is `as deep exact`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub as_exact_deep: bool,
 }
 
 #[ast(visit)]
@@ -950,6 +1108,10 @@ pub struct TSClassImplements<'a> {
     #[estree(via = TSClassImplementsExpression)]
     pub expression: TSTypeName<'a>,
     pub type_arguments: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    /// TightScript: `-exact` before the type, as in `implements -exact A`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub remove_exact: bool,
 }
 
 /// TypeScriptInterface Declaration
@@ -1027,6 +1189,10 @@ pub struct TSPropertySignature<'a> {
     pub readonly: bool,
     pub key: PropertyKey<'a>,
     pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+    /// TightScript permission modifier, as in `{ rw a: string }`. Always a permission variant.
+    #[builder(default)]
+    #[estree(skip)]
+    pub permission: Option<TSTypeOperatorOperator>,
 }
 
 #[ast(visit)]
@@ -1065,6 +1231,10 @@ pub struct TSIndexSignature<'a> {
     pub type_annotation: Box<'a, TSTypeAnnotation<'a>>,
     pub readonly: bool,
     pub r#static: bool,
+    /// TightScript permission modifier, as in `{ read [key: string]: T }`. Always a permission variant.
+    #[builder(default)]
+    #[estree(skip)]
+    pub permission: Option<TSTypeOperatorOperator>,
 }
 
 #[ast(visit)]
@@ -1168,6 +1338,10 @@ pub struct TSInterfaceHeritage<'a> {
     #[estree(rename = "expression", via = TSInterfaceHeritageExpression)]
     pub type_name: TSTypeName<'a>,
     pub type_arguments: Option<Box<'a, TSTypeParameterInstantiation<'a>>>,
+    /// TightScript: `-exact` before the type, as in `interface A extends -exact B {}`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub remove_exact: bool,
 }
 
 /// TypeScript Type Predicate
@@ -1207,6 +1381,10 @@ pub struct TSTypePredicate<'a> {
     /// ```
     pub asserts: bool,
     pub type_annotation: Option<Box<'a, TSTypeAnnotation<'a>>>,
+    /// TightScript: a soft type guard, `x is? T`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub soft: bool,
 }
 
 #[ast(visit)]
@@ -1609,6 +1787,14 @@ pub struct TSMappedType<'a> {
     /// type Qux = { [P in keyof T]: T[P] }           // None
     /// ```
     pub readonly: Option<TSMappedTypeModifierOperator>,
+    /// TightScript permission modifier before the key, as in `{ -write [K in keyof T]: T[K] }`.
+    #[builder(default)]
+    #[estree(skip)]
+    pub permission: Option<TSTypeOperatorOperator>,
+    /// TightScript: `+` or `-` before [`TSMappedType::permission`].
+    #[builder(default)]
+    #[estree(skip)]
+    pub permission_sign: Option<TSPermissionSign>,
     pub scope_id: Cell<Option<ScopeId>>,
 }
 

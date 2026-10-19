@@ -75,8 +75,12 @@ impl StylishReporter {
 
         for diagnostics in grouped.values() {
             let filename = &diagnostics[0].0.filename;
-            let filename = if let Some(path) =
-                cwd.as_ref().and_then(|d| d.join(filename).canonicalize().ok())
+            // Not `canonicalize`, which gives `\\?\C:\...` paths on Windows.
+            let filename = if let Some(path) = cwd
+                .as_ref()
+                .map(|d| d.join(filename))
+                .filter(|path| path.exists())
+                .and_then(|path| std::path::absolute(path).ok())
             {
                 path.display().to_string()
             } else {
@@ -198,5 +202,19 @@ mod test {
         let output = reporter.finish(&DiagnosticResult::default()).unwrap();
 
         assert!(output.contains("\u{1b}[31m\u{2716}"), "Output should color the ✖ character red");
+    }
+
+    #[test]
+    fn test_stylish_reporter_heading_is_plain_absolute_path() {
+        let mut reporter = StylishReporter::default().with_no_color(true);
+        let error = OxcDiagnostic::error("error message")
+            .with_label(Span::new(0, 4))
+            .with_source_code(NamedSource::new("Cargo.toml", "code"));
+        reporter.render_error(error);
+
+        let output = reporter.finish(&DiagnosticResult::default()).unwrap();
+
+        let expected = std::env::current_dir().unwrap().join("Cargo.toml");
+        assert!(output.starts_with(&format!("\n{}\n", expected.display())), "{output:?}");
     }
 }

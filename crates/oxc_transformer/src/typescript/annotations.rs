@@ -335,6 +335,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for TypeScriptAnnotations<'a> {
         func.this_param = None;
         func.type_parameters = None;
         func.return_type = None;
+        func.params.function_type = None;
     }
 
     fn enter_jsx_opening_element(
@@ -369,6 +370,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for TypeScriptAnnotations<'a> {
         def.r#override = false;
         def.optional = false;
         def.readonly = false;
+        def.permission = None;
         def.type_annotation = None;
     }
 
@@ -378,6 +380,7 @@ impl<'a> Traverse<'a, TransformState<'a>> for TypeScriptAnnotations<'a> {
         _ctx: &mut TraverseCtx<'a>,
     ) {
         def.accessibility = None;
+        def.permission = None;
         def.definite = false;
         def.type_annotation = None;
     }
@@ -528,7 +531,9 @@ impl<'a> TypeScriptAnnotations<'a> {
             Declaration::TSTypeAliasDeclaration(_)
             | Declaration::TSInterfaceDeclaration(_)
             | Declaration::TSGlobalDeclaration(_)
-            | Declaration::TSExternalModuleDeclaration(_) => false,
+            | Declaration::TSExternalModuleDeclaration(_)
+            | Declaration::TSProvideDeclaration(_)
+            | Declaration::TSTypeFromDeclaration(_) => false,
             // Remove `declare var/let/const`
             Declaration::VariableDeclaration(var_decl) => !var_decl.declare,
             // Remove `declare function` and function overload signatures (no body)

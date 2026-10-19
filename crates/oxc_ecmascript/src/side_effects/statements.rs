@@ -96,7 +96,9 @@ impl<'a> MayHaveSideEffects<'a> for Declaration<'a> {
             | Declaration::TSNamespaceDeclaration(_)
             | Declaration::TSGlobalDeclaration(_)
             | Declaration::TSInterfaceDeclaration(_)
-            | Declaration::TSTypeAliasDeclaration(_) => unreachable!(),
+            | Declaration::TSTypeAliasDeclaration(_)
+            | Declaration::TSProvideDeclaration(_)
+            | Declaration::TSTypeFromDeclaration(_) => unreachable!(),
         }
     }
 }

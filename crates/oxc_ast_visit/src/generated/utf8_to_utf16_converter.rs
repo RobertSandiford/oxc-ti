@@ -743,6 +743,30 @@ impl<'a> VisitMut<'a> for Utf8ToUtf16Converter<'_> {
         self.convert_offset(&mut it.span.end);
     }
 
+    fn visit_ts_distribute_type(&mut self, it: &mut TSDistributeType<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_ts_distribute_type(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
+
+    fn visit_ts_type_return(&mut self, it: &mut TSTypeReturn<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_ts_type_return(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
+
+    fn visit_ts_provide_declaration(&mut self, it: &mut TSProvideDeclaration<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_ts_provide_declaration(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
+
+    fn visit_ts_type_from_declaration(&mut self, it: &mut TSTypeFromDeclaration<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_ts_type_from_declaration(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
+
     fn visit_ts_conditional_type(&mut self, it: &mut TSConditionalType<'a>) {
         self.convert_offset(&mut it.span.start);
         walk_mut::walk_ts_conditional_type(self, it);

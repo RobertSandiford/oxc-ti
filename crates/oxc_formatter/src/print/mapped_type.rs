@@ -82,6 +82,12 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSMappedType<'a>> {
                 };
                 write!(f, [prefix, "readonly", space()]);
             }
+            if let Some(permission) = self.permission() {
+                if let Some(sign) = self.permission_sign() {
+                    write!(f, [sign.to_str()]);
+                }
+                write!(f, [permission.to_str(), space()]);
+            }
 
             let format_key_in_constraint = format_with(|f| {
                 write!(f, [key, space(), "in", space(), constraint]);

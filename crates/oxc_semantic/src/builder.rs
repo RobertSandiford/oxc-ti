@@ -2789,6 +2789,15 @@ impl<'a> Visit<'a> for SemanticBuilder<'a> {
         self.leave_ambient_context(decl.declare);
     }
 
+    fn visit_ts_type_from_declaration(&mut self, decl: &TSTypeFromDeclaration<'a>) {
+        let kind = AstKind::TSTypeFromDeclaration(self.alloc(decl));
+        self.enter_node(kind);
+        decl.bind(self);
+        self.visit_span(&decl.span);
+        self.visit_binding_identifier(&decl.id);
+        self.leave_node(kind);
+    }
+
     fn visit_ts_interface_declaration(&mut self, decl: &TSInterfaceDeclaration<'a>) {
         let kind = AstKind::TSInterfaceDeclaration(self.alloc(decl));
         self.enter_node(kind);

@@ -834,6 +834,26 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
+    fn visit_ts_distribute_type(&mut self, it: &mut TSDistributeType<'a>) {
+        walk_ts_distribute_type(self, it);
+    }
+
+    #[inline]
+    fn visit_ts_type_return(&mut self, it: &mut TSTypeReturn<'a>) {
+        walk_ts_type_return(self, it);
+    }
+
+    #[inline]
+    fn visit_ts_provide_declaration(&mut self, it: &mut TSProvideDeclaration<'a>) {
+        walk_ts_provide_declaration(self, it);
+    }
+
+    #[inline]
+    fn visit_ts_type_from_declaration(&mut self, it: &mut TSTypeFromDeclaration<'a>) {
+        walk_ts_type_from_declaration(self, it);
+    }
+
+    #[inline]
     fn visit_ts_conditional_type(&mut self, it: &mut TSConditionalType<'a>) {
         walk_ts_conditional_type(self, it);
     }
@@ -2142,6 +2162,8 @@ pub mod walk_mut {
             Declaration::TSImportEqualsDeclaration(it) => {
                 visitor.visit_ts_import_equals_declaration(it)
             }
+            Declaration::TSProvideDeclaration(it) => visitor.visit_ts_provide_declaration(it),
+            Declaration::TSTypeFromDeclaration(it) => visitor.visit_ts_type_from_declaration(it),
         }
     }
 
@@ -2585,6 +2607,9 @@ pub mod walk_mut {
         visitor.visit_formal_parameter_list(&mut it.items);
         if let Some(rest) = &mut it.rest {
             visitor.visit_formal_parameter_rest(rest);
+        }
+        if let Some(function_type) = &mut it.function_type {
+            visitor.visit_ts_type_annotation(function_type);
         }
         visitor.leave_node(kind);
     }
@@ -3555,7 +3580,71 @@ pub mod walk_mut {
             TSType::JSDocNullableType(it) => visitor.visit_js_doc_nullable_type(it),
             TSType::JSDocNonNullableType(it) => visitor.visit_js_doc_non_nullable_type(it),
             TSType::JSDocUnknownType(it) => visitor.visit_js_doc_unknown_type(it),
+            TSType::TSDistributeType(it) => visitor.visit_ts_distribute_type(it),
+            TSType::TSTypeReturn(it) => visitor.visit_ts_type_return(it),
         }
+    }
+
+    #[inline]
+    pub fn walk_ts_distribute_type<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut TSDistributeType<'a>,
+    ) {
+        let kind = AstType::TSDistributeType;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_ts_type(&mut it.source);
+        visitor.enter_scope(ScopeFlags::empty(), &it.scope_id);
+        if let Some(member) = &mut it.member {
+            visitor.visit_ts_type_parameter(member);
+        }
+        visitor.visit_ts_type(&mut it.body);
+        visitor.leave_scope();
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_ts_type_return<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut TSTypeReturn<'a>) {
+        let kind = AstType::TSTypeReturn;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        if let Some(value_type) = &mut it.value_type {
+            visitor.visit_ts_type(value_type);
+        }
+        visitor.visit_ts_type(&mut it.type_annotation);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_ts_provide_declaration<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut TSProvideDeclaration<'a>,
+    ) {
+        let kind = AstType::TSProvideDeclaration;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        if let Some(type_annotation) = &mut it.type_annotation {
+            visitor.visit_ts_type(type_annotation);
+        }
+        if let Some(type_alias) = &mut it.type_alias {
+            visitor.visit_ts_type_alias_declaration(type_alias);
+        }
+        if let Some(type_from) = &mut it.type_from {
+            visitor.visit_ts_type_from_declaration(type_from);
+        }
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_ts_type_from_declaration<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut TSTypeFromDeclaration<'a>,
+    ) {
+        let kind = AstType::TSTypeFromDeclaration;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_binding_identifier(&mut it.id);
+        visitor.leave_node(kind);
     }
 
     #[inline]

@@ -384,6 +384,18 @@ impl<'a> Binder<'a> for TSImportEqualsDeclaration<'a> {
     }
 }
 
+impl<'a> Binder<'a> for TSTypeFromDeclaration<'a> {
+    fn bind(&self, builder: &mut SemanticBuilder<'a>) {
+        let symbol_id = builder.declare_symbol(
+            self.id.span,
+            self.id.name,
+            SymbolFlags::TypeAlias,
+            SymbolFlags::TypeAliasExcludes,
+        );
+        self.id.symbol_id.set(Some(symbol_id));
+    }
+}
+
 impl<'a> Binder<'a> for TSTypeAliasDeclaration<'a> {
     fn bind(&self, builder: &mut SemanticBuilder<'a>) {
         let includes = if self.declare {

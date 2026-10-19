@@ -205,7 +205,82 @@ impl Gen for Statement<'_> {
                 decl.print(p, ctx);
                 p.print_semicolon_after_statement();
             }
+            Self::TSProvideDeclaration(decl) => {
+                p.print_indent();
+                p.print_comments_at(decl.span.start);
+                decl.print(p, ctx);
+                if decl.names_next_statement() {
+                    print_line_break_before_kept_statement(p);
+                } else {
+                    p.print_semicolon_after_statement();
+                }
+            }
+            Self::TSTypeFromDeclaration(decl) => {
+                p.print_indent();
+                p.print_comments_at(decl.span.start);
+                decl.print(p, ctx);
+                print_line_break_before_kept_statement(p);
+            }
         }
+    }
+}
+
+/// After `type R from` or `provide from`, which end without `;` and are followed by the statement they name.
+fn print_line_break_before_kept_statement(p: &mut Codegen) {
+    if p.options.minify {
+        p.print_hard_space();
+    } else {
+        p.print_soft_newline();
+    }
+}
+
+impl Gen for TSProvideDeclaration<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_str("provide");
+        if let Some(type_alias) = &self.type_alias {
+            p.print_hard_space();
+            type_alias.print(p, ctx);
+        } else if let Some(type_from) = &self.type_from {
+            p.print_hard_space();
+            type_from.print(p, ctx);
+        } else if let Some(type_annotation) = &self.type_annotation {
+            p.print_hard_space();
+            type_annotation.print(p, ctx);
+        } else {
+            p.print_str(" from");
+        }
+    }
+}
+
+impl Gen for TSTypeFromDeclaration<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_str("type ");
+        self.id.print(p, ctx);
+        p.print_str(" from");
+    }
+}
+
+impl Gen for TSDistributeType<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        p.print_str("distribute ");
+        self.source.print(p, ctx);
+        if let Some(member) = &self.member {
+            p.print_hard_space();
+            member.print(p, ctx);
+        }
+        p.print_str(" as ");
+        self.body.print(p, ctx);
+    }
+}
+
+impl Gen for TSTypeReturn<'_> {
+    fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if let Some(value_type) = &self.value_type {
+            value_type.print(p, ctx);
+            p.print_str(" and ");
+        }
+        p.print_str("type ");
+        self.type_annotation.print(p, ctx);
     }
 }
 
@@ -789,19 +864,38 @@ impl Gen for Function<'_> {
                 p.print_space_before_identifier();
                 id.print(p, ctx);
             }
+            // TightScript: `function f: F (a) {}`.
+            if let Some(function_type) = &self.params.function_type {
+                p.print_colon();
+                p.print_soft_space();
+                // Own type parameters need the type parenthesized, or `F <T>` reads as `F<T>`.
+                let wrap = self.type_parameters.is_some()
+                    && !matches!(function_type.type_annotation, TSType::TSParenthesizedType(_));
+                p.wrap(wrap, |p| function_type.print(p, ctx));
+            }
+            // `declare function f: F;` has no parameter list.
+            let has_param_list =
+                self.params.function_type.is_none() || !self.params.span.is_empty();
+            if self.params.function_type.is_some()
+                && (has_param_list || self.type_parameters.is_some())
+            {
+                p.print_soft_space();
+            }
             if let Some(type_parameters) = &self.type_parameters {
                 type_parameters.print(p, ctx);
             }
-            p.print_ascii_byte(b'(');
-            if let Some(this_param) = &self.this_param {
-                this_param.print(p, ctx);
-                if !self.params.is_empty() || self.params.rest.is_some() {
-                    p.print_ascii_byte(b',');
-                    p.print_soft_space();
+            if has_param_list {
+                p.print_ascii_byte(b'(');
+                if let Some(this_param) = &self.this_param {
+                    this_param.print(p, ctx);
+                    if !self.params.is_empty() || self.params.rest.is_some() {
+                        p.print_ascii_byte(b',');
+                        p.print_soft_space();
+                    }
                 }
+                self.params.print(p, ctx);
+                p.print_ascii_byte(b')');
             }
-            self.params.print(p, ctx);
-            p.print_ascii_byte(b')');
             if let Some(return_type) = &self.return_type {
                 p.print_colon();
                 p.print_soft_space();
@@ -1096,6 +1190,8 @@ impl Gen for ExportDeclaration<'_> {
             Declaration::TSInterfaceDeclaration(decl) => decl.print(p, ctx),
             Declaration::TSEnumDeclaration(decl) => decl.print(p, ctx),
             Declaration::TSImportEqualsDeclaration(decl) => decl.print(p, ctx),
+            Declaration::TSProvideDeclaration(decl) => decl.print(p, ctx),
+            Declaration::TSTypeFromDeclaration(decl) => decl.print(p, ctx),
         }
         if matches!(
             decl,
@@ -1104,6 +1200,9 @@ impl Gen for ExportDeclaration<'_> {
                 | Declaration::TSImportEqualsDeclaration(_)
         ) {
             p.print_semicolon_after_statement();
+        } else if matches!(decl, Declaration::TSTypeFromDeclaration(_)) {
+            print_line_break_before_kept_statement(p);
+            p.needs_semicolon = false;
         } else {
             p.print_soft_newline();
             p.needs_semicolon = false;
@@ -3025,6 +3124,11 @@ impl Gen for PropertyDefinition<'_> {
             p.print_str("readonly");
             p.print_soft_space();
         }
+        if let Some(permission) = self.permission {
+            p.print_space_before_identifier();
+            p.print_str(permission.to_str());
+            p.print_soft_space();
+        }
         if self.computed {
             p.print_ascii_byte(b'[');
         }
@@ -3078,6 +3182,10 @@ impl Gen for AccessorProperty<'_> {
         }
         p.print_space_before_identifier();
         p.print_str("accessor");
+        if let Some(permission) = self.permission {
+            p.print_hard_space();
+            p.print_str(permission.to_str());
+        }
         if self.computed {
             p.print_soft_space();
             p.print_ascii_byte(b'[');
@@ -3267,6 +3375,9 @@ impl Gen for Decorator<'_> {
 
 impl Gen for TSClassImplements<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if self.remove_exact {
+            p.print_str("-exact ");
+        }
         self.expression.print(p, ctx);
         if let Some(type_parameters) = self.type_arguments.as_ref() {
             type_parameters.print(p, ctx);
@@ -3353,6 +3464,8 @@ impl Gen for TSType<'_> {
             Self::JSDocNullableType(ty) => ty.print(p, ctx),
             Self::JSDocNonNullableType(ty) => ty.print(p, ctx),
             Self::JSDocUnknownType(_ty) => p.print_str("unknown"),
+            Self::TSDistributeType(ty) => ty.print(p, ctx),
+            Self::TSTypeReturn(ty) => ty.print(p, ctx),
         }
     }
 }
@@ -3402,7 +3515,15 @@ fn parenthesize_check_type_of_postfix_type(ty: &TSType<'_>) -> bool {
             | TSType::TSConditionalType(_)
             | TSType::TSInferType(_)
             | TSType::TSTypeOperatorType(_)
+            | TSType::TSDistributeType(_)
+            | TSType::TSTypeReturn(_)
     )
+}
+
+/// TightScript's `distribute U as X` and `type T` take the rest of the type as their operand,
+/// so a union or intersection member that is not last needs parentheses.
+fn is_open_ended_member(ty: &TSType<'_>, is_last: bool) -> bool {
+    !is_last && matches!(ty, TSType::TSDistributeType(_) | TSType::TSTypeReturn(_))
 }
 
 impl Gen for TSUnionType<'_> {
@@ -3410,14 +3531,18 @@ impl Gen for TSUnionType<'_> {
         let Some((first, rest)) = self.types.split_first() else {
             return;
         };
-        p.wrap(parenthesize_check_type_of_union_type(first), |p| {
+        let wrap_first = parenthesize_check_type_of_union_type(first)
+            || is_open_ended_member(first, rest.is_empty());
+        p.wrap(wrap_first, |p| {
             first.print(p, ctx);
         });
-        for item in rest {
+        for (i, item) in rest.iter().enumerate() {
             p.print_soft_space();
             p.print_ascii_byte(b'|');
             p.print_soft_space();
-            p.wrap(parenthesize_check_type_of_union_type(item), |p| {
+            let wrap = parenthesize_check_type_of_union_type(item)
+                || is_open_ended_member(item, i + 1 == rest.len());
+            p.wrap(wrap, |p| {
                 item.print(p, ctx);
             });
         }
@@ -3437,14 +3562,18 @@ impl Gen for TSIntersectionType<'_> {
         let Some((first, rest)) = self.types.split_first() else {
             return;
         };
-        p.wrap(parenthesize_check_type_of_intersection_type(first), |p| {
+        let wrap_first = parenthesize_check_type_of_intersection_type(first)
+            || is_open_ended_member(first, rest.is_empty());
+        p.wrap(wrap_first, |p| {
             first.print(p, ctx);
         });
-        for item in rest {
+        for (i, item) in rest.iter().enumerate() {
             p.print_soft_space();
             p.print_ascii_byte(b'&');
             p.print_soft_space();
-            p.wrap(parenthesize_check_type_of_intersection_type(item), |p| {
+            let wrap = parenthesize_check_type_of_intersection_type(item)
+                || is_open_ended_member(item, i + 1 == rest.len());
+            p.wrap(wrap, |p| {
                 item.print(p, ctx);
             });
         }
@@ -3552,6 +3681,17 @@ impl Gen for TSMappedType<'_> {
             None => {}
         }
         if self.readonly.is_some() {
+            if self.permission.is_some() && self.permission_sign.is_none() {
+                p.print_hard_space();
+            } else {
+                p.print_soft_space();
+            }
+        }
+        if let Some(permission) = self.permission {
+            if let Some(sign) = self.permission_sign {
+                p.print_str(sign.to_str());
+            }
+            p.print_str(permission.to_str());
             p.print_soft_space();
         }
         p.print_ascii_byte(b'[');
@@ -3589,6 +3729,12 @@ impl Gen for TSQualifiedName<'_> {
 
 impl Gen for TSTypeOperator<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if self.lazy {
+            p.print_str("lazy ");
+        }
+        if let Some(sign) = self.sign {
+            p.print_str(sign.to_str());
+        }
         p.print_str(self.operator.to_str());
         let wrap = matches!(
             &self.type_annotation,
@@ -3597,8 +3743,13 @@ impl Gen for TSTypeOperator<'_> {
                 | TSType::TSFunctionType(_)
                 | TSType::TSConstructorType(_)
                 | TSType::TSConditionalType(_)
+                | TSType::TSDistributeType(_)
+                | TSType::TSTypeReturn(_)
         );
-        if wrap || type_starts_with_non_identifier(&self.type_annotation) {
+        // TightScript operators keep the space: `r [string]` is a tuple operand, `r[string]` an indexed type.
+        if (wrap || type_starts_with_non_identifier(&self.type_annotation))
+            && !self.operator.is_tightscript()
+        {
             p.print_soft_space();
         } else {
             p.print_hard_space();
@@ -3623,7 +3774,7 @@ impl Gen for TSTypePredicate<'_> {
             }
         }
         if let Some(type_annotation) = &self.type_annotation {
-            p.print_str(" is ");
+            p.print_str(if self.soft { " is? " } else { " is " });
             type_annotation.print(p, ctx);
         }
     }
@@ -3740,7 +3891,21 @@ impl Gen for TSTypeParameter<'_> {
         if self.out {
             p.print_str("out ");
         }
+        if self.owned {
+            p.print_str("owned ");
+        }
+        if self.exact {
+            p.print_str(if self.exact_optional { "exact? " } else { "exact " });
+        }
+        if let Some(permission) = self.deep_permission {
+            p.print_str(if self.deep_lazy { "lazy deep " } else { "deep " });
+            p.print_str(permission.to_str());
+            p.print_hard_space();
+        }
         self.name.print(p, ctx);
+        if self.as_exact {
+            p.print_str(if self.as_exact_deep { " as deep exact" } else { " as exact" });
+        }
         if let Some(constraint) = &self.constraint {
             p.print_str(" extends");
             if type_starts_with_non_identifier(constraint) {
@@ -3888,6 +4053,10 @@ impl Gen for TSPropertySignature<'_> {
         if self.readonly {
             p.print_str("readonly ");
         }
+        if let Some(permission) = self.permission {
+            p.print_str(permission.to_str());
+            p.print_hard_space();
+        }
         if self.computed {
             p.print_ascii_byte(b'[');
             self.key.print(p, ctx);
@@ -3994,6 +4163,10 @@ impl Gen for TSIndexSignature<'_> {
         if self.readonly {
             p.print_str("readonly ");
         }
+        if let Some(permission) = self.permission {
+            p.print_str(permission.to_str());
+            p.print_hard_space();
+        }
         p.print_ascii_byte(b'[');
         p.print_name(self.parameter.name.as_str());
         p.print_colon();
@@ -4017,8 +4190,18 @@ impl Gen for TSTupleElement<'_> {
                 p.print_ascii_byte(b'?');
             }
             TSTupleElement::TSRestType(ts_type) => {
-                p.print_str("...");
-                ts_type.type_annotation.print(p, ctx);
+                // A member's permission comes before the `...`: `[rw ...rest: T[]]`.
+                if let TSType::TSNamedTupleMember(member) = &ts_type.type_annotation
+                    && let Some(permission) = member.permission
+                {
+                    p.print_str(permission.to_str());
+                    p.print_hard_space();
+                    p.print_str("...");
+                    print_named_tuple_member_without_permission(member, p, ctx);
+                } else {
+                    p.print_str("...");
+                    ts_type.type_annotation.print(p, ctx);
+                }
             }
         }
     }
@@ -4026,14 +4209,26 @@ impl Gen for TSTupleElement<'_> {
 
 impl Gen for TSNamedTupleMember<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
-        self.label.print(p, ctx);
-        if self.optional {
-            p.print_ascii_byte(b'?');
+        if let Some(permission) = self.permission {
+            p.print_str(permission.to_str());
+            p.print_hard_space();
         }
-        p.print_colon();
-        p.print_soft_space();
-        self.element_type.print(p, ctx);
+        print_named_tuple_member_without_permission(self, p, ctx);
     }
+}
+
+fn print_named_tuple_member_without_permission(
+    member: &TSNamedTupleMember<'_>,
+    p: &mut Codegen,
+    ctx: Context,
+) {
+    member.label.print(p, ctx);
+    if member.optional {
+        p.print_ascii_byte(b'?');
+    }
+    p.print_colon();
+    p.print_soft_space();
+    member.element_type.print(p, ctx);
 }
 
 impl Gen for TSExternalModuleDeclaration<'_> {
@@ -4197,6 +4392,9 @@ impl Gen for TSInterfaceDeclaration<'_> {
 
 impl Gen for TSInterfaceHeritage<'_> {
     fn r#gen(&self, p: &mut Codegen, ctx: Context) {
+        if self.remove_exact {
+            p.print_str("-exact ");
+        }
         self.type_name.print(p, ctx);
         if let Some(type_parameters) = &self.type_arguments {
             type_parameters.print(p, ctx);

@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["apps/*", "crates/*", "napi/*", "tasks/*"]
-exclude = ["apps/shared", "tasks/lint_rules", "tasks/e2e"]
+exclude = ["apps/shared", "tasks/lint_rules", "tasks/e2e", "tasks/tightscript"]
 
 [workspace.package]
 authors = ["Boshen <boshenc@gmail.com>", "Oxc contributors"]
@@ -157,6 +157,9 @@ oxc_transform_relay_napi = { version = "0.144.0", path = "napi/transform-relay" 
 oxc_transformer = { version = "0.154.0", path = "crates/oxc_transformer" } # Code transformation
 oxc_transformer_plugins = { version = "0.154.0", path = "crates/oxc_transformer_plugins" } # Transformer plugins
 oxc_traverse = { version = "0.154.0", path = "crates/oxc_traverse" } # AST traversal
+oxc_ti_compile = { version = "0.154.0", path = "crates/oxc_ti_compile" } # TightScript: browser module compile pipeline
+tungsten_passes = { version = "0.154.0", path = "crates/tungsten_passes" } # TightScript: tungsten's dev Babel plugins as compile passes
+oxc_ts_blank = { version = "0.154.0", path = "crates/oxc_ts_blank" } # TightScript: erases types as whitespace
 
 # publish = false
 oxc_config = { path = "crates/oxc_config" } # Config discovery

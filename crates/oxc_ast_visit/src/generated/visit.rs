@@ -842,6 +842,26 @@ pub trait Visit<'a>: Sized {
     }
 
     #[inline]
+    fn visit_ts_distribute_type(&mut self, it: &TSDistributeType<'a>) {
+        walk_ts_distribute_type(self, it);
+    }
+
+    #[inline]
+    fn visit_ts_type_return(&mut self, it: &TSTypeReturn<'a>) {
+        walk_ts_type_return(self, it);
+    }
+
+    #[inline]
+    fn visit_ts_provide_declaration(&mut self, it: &TSProvideDeclaration<'a>) {
+        walk_ts_provide_declaration(self, it);
+    }
+
+    #[inline]
+    fn visit_ts_type_from_declaration(&mut self, it: &TSTypeFromDeclaration<'a>) {
+        walk_ts_type_from_declaration(self, it);
+    }
+
+    #[inline]
     fn visit_ts_conditional_type(&mut self, it: &TSConditionalType<'a>) {
         walk_ts_conditional_type(self, it);
     }
@@ -2105,6 +2125,8 @@ pub mod walk {
             Declaration::TSImportEqualsDeclaration(it) => {
                 visitor.visit_ts_import_equals_declaration(it)
             }
+            Declaration::TSProvideDeclaration(it) => visitor.visit_ts_provide_declaration(it),
+            Declaration::TSTypeFromDeclaration(it) => visitor.visit_ts_type_from_declaration(it),
         }
     }
 
@@ -2505,6 +2527,9 @@ pub mod walk {
         visitor.visit_formal_parameter_list(&it.items);
         if let Some(rest) = &it.rest {
             visitor.visit_formal_parameter_rest(rest);
+        }
+        if let Some(function_type) = &it.function_type {
+            visitor.visit_ts_type_annotation(function_type);
         }
         visitor.leave_node(kind);
     }
@@ -3386,7 +3411,68 @@ pub mod walk {
             TSType::JSDocNullableType(it) => visitor.visit_js_doc_nullable_type(it),
             TSType::JSDocNonNullableType(it) => visitor.visit_js_doc_non_nullable_type(it),
             TSType::JSDocUnknownType(it) => visitor.visit_js_doc_unknown_type(it),
+            TSType::TSDistributeType(it) => visitor.visit_ts_distribute_type(it),
+            TSType::TSTypeReturn(it) => visitor.visit_ts_type_return(it),
         }
+    }
+
+    #[inline]
+    pub fn walk_ts_distribute_type<'a, V: Visit<'a>>(visitor: &mut V, it: &TSDistributeType<'a>) {
+        let kind = AstKind::TSDistributeType(visitor.alloc(it));
+        visitor.enter_node(kind);
+        visitor.visit_span(&it.span);
+        visitor.visit_ts_type(&it.source);
+        visitor.enter_scope(ScopeFlags::empty(), &it.scope_id);
+        if let Some(member) = &it.member {
+            visitor.visit_ts_type_parameter(member);
+        }
+        visitor.visit_ts_type(&it.body);
+        visitor.leave_scope();
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_ts_type_return<'a, V: Visit<'a>>(visitor: &mut V, it: &TSTypeReturn<'a>) {
+        let kind = AstKind::TSTypeReturn(visitor.alloc(it));
+        visitor.enter_node(kind);
+        visitor.visit_span(&it.span);
+        if let Some(value_type) = &it.value_type {
+            visitor.visit_ts_type(value_type);
+        }
+        visitor.visit_ts_type(&it.type_annotation);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_ts_provide_declaration<'a, V: Visit<'a>>(
+        visitor: &mut V,
+        it: &TSProvideDeclaration<'a>,
+    ) {
+        let kind = AstKind::TSProvideDeclaration(visitor.alloc(it));
+        visitor.enter_node(kind);
+        visitor.visit_span(&it.span);
+        if let Some(type_annotation) = &it.type_annotation {
+            visitor.visit_ts_type(type_annotation);
+        }
+        if let Some(type_alias) = &it.type_alias {
+            visitor.visit_ts_type_alias_declaration(type_alias);
+        }
+        if let Some(type_from) = &it.type_from {
+            visitor.visit_ts_type_from_declaration(type_from);
+        }
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_ts_type_from_declaration<'a, V: Visit<'a>>(
+        visitor: &mut V,
+        it: &TSTypeFromDeclaration<'a>,
+    ) {
+        let kind = AstKind::TSTypeFromDeclaration(visitor.alloc(it));
+        visitor.enter_node(kind);
+        visitor.visit_span(&it.span);
+        visitor.visit_binding_identifier(&it.id);
+        visitor.leave_node(kind);
     }
 
     #[inline]

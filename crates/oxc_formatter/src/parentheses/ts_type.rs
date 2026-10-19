@@ -34,6 +34,8 @@ impl NeedsParentheses<'_> for AstNode<'_, TSType<'_>> {
             AstNodes::TSConditionalType(it) => it.needs_parentheses(f),
             AstNodes::TSTypeOperator(it) => it.needs_parentheses(f),
             AstNodes::TSTypeQuery(it) => it.needs_parentheses(f),
+            AstNodes::TSDistributeType(it) => it.needs_parentheses(f),
+            AstNodes::TSTypeReturn(it) => it.needs_parentheses(f),
             _ => {
                 // TODO: incomplete
                 false
@@ -193,9 +195,113 @@ impl NeedsParentheses<'_> for AstNode<'_, TSConditionalType<'_>> {
     }
 }
 
+impl NeedsParentheses<'_> for AstNode<'_, TSDistributeType<'_>> {
+    fn needs_parentheses(&self, _f: &JsFormatter<'_, '_>) -> bool {
+        open_ended_type_needs_parens(self.span(), effective_parent(self.parent()))
+    }
+}
+
+impl NeedsParentheses<'_> for AstNode<'_, TSTypeReturn<'_>> {
+    fn needs_parentheses(&self, _f: &JsFormatter<'_, '_>) -> bool {
+        open_ended_type_needs_parens(self.span(), effective_parent(self.parent()))
+    }
+}
+
+/// TightScript's `distribute U as X` and `type T` take the rest of the type as their operand,
+/// so they need parentheses wherever more of the type follows them.
+fn open_ended_type_needs_parens(span: Span, parent: &AstNodes) -> bool {
+    match parent {
+        AstNodes::TSConditionalType(ty) => {
+            ty.extends_type().span() == span || ty.check_type().span() == span
+        }
+        AstNodes::TSUnionType(union) => union.types.last().is_some_and(|last| last.span() != span),
+        AstNodes::TSIntersectionType(intersection) => {
+            intersection.types.last().is_some_and(|last| last.span() != span)
+        }
+        _ => operator_type_or_higher_needs_parens(span, parent),
+    }
+}
+
 impl NeedsParentheses<'_> for AstNode<'_, TSTypeOperator<'_>> {
     fn needs_parentheses(&self, _f: &JsFormatter<'_, '_>) -> bool {
-        operator_type_or_higher_needs_parens(self.span(), effective_parent(self.parent()))
+        let parent = effective_parent(self.parent());
+        // TightScript operators chain without parens (`owned rw T`), and `deep` requires it (`deep exact T`).
+        if let AstNodes::TSTypeOperator(operator) = parent
+            && operator.operator.is_tightscript()
+        {
+            return false;
+        }
+        if operand_starts_with_empty_type_literal(self)
+            && is_top_of_colon_return_type(self.span(), parent)
+        {
+            return true;
+        }
+        operator_type_or_higher_needs_parens(self.span(), parent)
+    }
+}
+
+/// `rw {}`, `deep rw {}[]`: at the top of a function's `: T` return type, that `{}` would read as the
+/// body. `owned`, `exact` and `transient` always take `{` as their operand.
+fn operand_starts_with_empty_type_literal(operator: &TSTypeOperator<'_>) -> bool {
+    fn starts_with_empty_type_literal(ty: &TSType<'_>) -> bool {
+        match ty {
+            TSType::TSTypeLiteral(literal) => literal.members.is_empty(),
+            TSType::TSArrayType(array) => starts_with_empty_type_literal(&array.element_type),
+            TSType::TSIndexedAccessType(access) => {
+                starts_with_empty_type_literal(&access.object_type)
+            }
+            _ => false,
+        }
+    }
+    if !operator.operator.is_tightscript() {
+        return false;
+    }
+    match &operator.type_annotation {
+        TSType::TSTypeOperatorType(inner) => operand_starts_with_empty_type_literal(inner),
+        operand => {
+            !matches!(
+                operator.operator,
+                TSTypeOperatorOperator::Owned
+                    | TSTypeOperatorOperator::Exact
+                    | TSTypeOperatorOperator::Transient
+            ) && starts_with_empty_type_literal(operand)
+        }
+    }
+}
+
+/// Whether a type is parsed at the top level of a function's, method's or accessor's `: T` return
+/// type, where a body may follow. Union and intersection members, operands of `keyof` and the like
+/// and a conditional's checked type are parsed at that same level, and so is a type that ends the
+/// return type: a predicate's type, `type T`, a function type's `=> T`.
+fn is_top_of_colon_return_type(span: Span, parent: &AstNodes<'_>) -> bool {
+    match parent {
+        AstNodes::TSUnionType(union) => is_top_of_colon_return_type(union.span, union.parent()),
+        AstNodes::TSIntersectionType(intersection) => {
+            is_top_of_colon_return_type(intersection.span, intersection.parent())
+        }
+        AstNodes::TSTypeOperator(operator) => {
+            is_top_of_colon_return_type(operator.span, operator.parent())
+        }
+        AstNodes::TSConditionalType(conditional) if conditional.check_type.span() == span => {
+            is_top_of_colon_return_type(conditional.span, conditional.parent())
+        }
+        AstNodes::TSTypeAnnotation(annotation) => match annotation.parent() {
+            AstNodes::Function(_) => true,
+            AstNodes::TSTypePredicate(predicate) => {
+                is_top_of_colon_return_type(predicate.span, predicate.parent())
+            }
+            AstNodes::TSFunctionType(function) => {
+                is_top_of_colon_return_type(function.span, function.parent())
+            }
+            _ => false,
+        },
+        AstNodes::TSTypeReturn(type_return) => {
+            is_top_of_colon_return_type(type_return.span, type_return.parent())
+        }
+        AstNodes::TSDistributeType(distribute) if distribute.body.span() == span => {
+            is_top_of_colon_return_type(distribute.span, distribute.parent())
+        }
+        _ => false,
     }
 }
 

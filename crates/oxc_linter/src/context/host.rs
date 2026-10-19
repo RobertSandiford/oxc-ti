@@ -16,8 +16,8 @@ use oxc_span::{SourceType, Span};
 use crate::{
     AllowWarnDeny, FrameworkFlags,
     config::{
-        LintConfig, LintPlugins, OxlintEnv, OxlintGlobals, OxlintSettings,
-        plugins::plugin_display_name,
+        DisableRuleCommentLocation, LintConfig, LintPlugins, OxlintEnv, OxlintGlobals,
+        OxlintSettings, plugins::plugin_display_name,
     },
     disable_directives::{DisableDirectives, DisableDirectivesBuilder, RuleCommentType},
     fixer::{Fix, FixKind, Message, PossibleFixes},
@@ -181,6 +181,8 @@ pub struct ContextHost<'a> {
     pub(super) frameworks: FrameworkFlags,
     /// If true, the linter will create "ignore this section / line" fixes for all diagnostics
     with_ignore_fixes: bool,
+    /// Where the "ignore this line" fix places its comment.
+    disable_rule_comment_location: DisableRuleCommentLocation,
     /// Lazily-computed shared result of the React Compiler lint run, reused by
     /// every rule in the React Compiler family (`react/hooks`, `react/refs`, …).
     /// Stays empty until the first such rule runs on this file.
@@ -224,9 +226,18 @@ impl<'a> ContextHost<'a> {
             config,
             frameworks: options.framework_hints,
             with_ignore_fixes: options.with_ignore_fixes,
+            disable_rule_comment_location: DisableRuleCommentLocation::default(),
             react_compiler_results: OnceCell::new(),
         }
         .sniff_for_frameworks()
+    }
+
+    pub(crate) fn with_disable_rule_comment_location(
+        mut self,
+        location: DisableRuleCommentLocation,
+    ) -> Self {
+        self.disable_rule_comment_location = location;
+        self
     }
 
     /// The current [`ContextSubHost`]
@@ -336,7 +347,11 @@ impl<'a> ContextHost<'a> {
     pub(crate) fn push_diagnostic(&self, mut diagnostic: Message) {
         if self.with_ignore_fixes {
             let source_text = self.source_text();
-            diagnostic.add_ignore_fix(self.current_sub_host().source_text_offset, source_text);
+            diagnostic.add_ignore_fix(
+                self.current_sub_host().source_text_offset,
+                source_text,
+                self.disable_rule_comment_location,
+            );
         }
         if self.current_sub_host().source_text_offset != 0 {
             diagnostic.move_offset(self.current_sub_host().source_text_offset);
@@ -349,7 +364,11 @@ impl<'a> ContextHost<'a> {
         if self.with_ignore_fixes {
             let source_text = self.source_text();
             for diagnostic in &mut diagnostics {
-                diagnostic.add_ignore_fix(self.current_sub_host().source_text_offset, source_text);
+                diagnostic.add_ignore_fix(
+                    self.current_sub_host().source_text_offset,
+                    source_text,
+                    self.disable_rule_comment_location,
+                );
             }
         }
         if self.current_sub_host().source_text_offset != 0 {

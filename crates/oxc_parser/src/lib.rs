@@ -670,6 +670,13 @@ struct ParserImpl<'a, C: ParserConfig> {
 
     /// Precomputed typescript detection
     is_ts: bool,
+
+    /// TightScript: inside a `: T` return type, where `{` after a permission may be the function body.
+    in_colon_return_type: bool,
+
+    /// TightScript: `parse_ts_type` calls in progress, and their number at the top of the `: T` return type.
+    type_depth: u32,
+    colon_return_type_depth: u32,
 }
 
 impl<'a, C: ParserConfig> ParserImpl<'a, C> {
@@ -702,6 +709,9 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
             ast: ParserAstBuilder::new(allocator),
             module_record_builder: ModuleRecordBuilder::new(allocator, source_type),
             is_ts: source_type.is_typescript(),
+            in_colon_return_type: false,
+            type_depth: 0,
+            colon_return_type_depth: 0,
         }
     }
 
@@ -1096,6 +1106,196 @@ mod test {
             assert_eq!(ret.diagnostics.len(), 1);
             assert_eq!(ret.diagnostics.first().unwrap().to_string(), "Flow is not supported");
         }
+    }
+
+    #[test]
+    fn tightscript_permission_modifier_errors() {
+        let allocator = Allocator::default();
+        let source_type = SourceType::ts();
+        let cases = [
+            ("class C { rw m() {} }", "Permission modifiers can only be used on properties"),
+            (
+                "class C { rw get x() { return 1 } }",
+                "Permission modifiers can only be used on properties",
+            ),
+            ("interface I { rw m(): void }", "Permission modifiers can only be used on properties"),
+            (
+                "type T = { read write a: string }",
+                "'write' modifier cannot be used with 'read' modifier",
+            ),
+            (
+                "class A { read write q = 1 }",
+                "'write' modifier cannot be used with 'read' modifier",
+            ),
+            (
+                "class A { readonly read c = 1 }",
+                "'read' modifier cannot be used with 'readonly' modifier",
+            ),
+            (
+                "class A { read readonly c = 1 }",
+                "'readonly' modifier cannot be used with 'read' modifier",
+            ),
+            (
+                "interface I { r readonly c: number }",
+                "'readonly' modifier cannot be used with 'r' modifier",
+            ),
+            ("class A { read static x = 1 }", "'static' modifier must precede 'read' modifier"),
+            ("class A { rw private y = 1 }", "'private' modifier must precede 'rw' modifier"),
+            (
+                "class B extends A { r override z = 1 }",
+                "'override' modifier must precede 'r' modifier",
+            ),
+            ("function noArgs: F { return 's' }", "A function with a body needs a parameter list"),
+            (
+                "function e9<const X>(t: X) { provide type X[]\n return 'foo' }",
+                "Type definition expected, as in 'provide type X = ...'. To provide 'X[]', write 'provide X[]'.",
+            ),
+            (
+                "function e10() { provide type Array<string>\n }",
+                "To provide 'Array<string>', write 'provide Array<string>'.",
+            ),
+        ];
+        for (source, message) in cases {
+            let ret = Parser::new(&allocator, source, source_type).parse();
+            assert_eq!(ret.diagnostics.len(), 1, "{source}: {:?}", ret.diagnostics);
+            let diagnostic = ret.diagnostics[0].to_string();
+            assert!(diagnostic.contains(message), "{source}: {diagnostic}");
+        }
+    }
+
+    #[test]
+    fn tightscript_permission_modifiers_mix_with_others() {
+        let allocator = Allocator::default();
+        for source in [
+            "class A { static read x = 1; private rw y = 'y'; declare w q: number; read declare v: number }",
+            "class A { @dec rw accessor p = 1 }",
+            "interface I { read a: string; readonly b: number }",
+        ] {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+        }
+    }
+
+    #[test]
+    fn tightscript_brace_after_permission_in_return_type() {
+        let allocator = Allocator::default();
+        let parse = |source: &'static str| {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+            ret.program
+        };
+        // Nested inside the return type, no body can follow, so `{` is the operand.
+        for source in [
+            "function n1(): (owned {}) {}",
+            "function n2(): Box<rw {}> {}",
+            "function n3(): [exact {}] {}",
+            "function n4(): { x: owned {} } {}",
+            "const n5 = (): Box<exact {}> => 1;",
+            "function n6(): A extends B ? owned {} : C {}",
+        ] {
+            parse(source);
+        }
+        let function_has_body = |source: &'static str| {
+            let program = parse(source);
+            match &program.body[0] {
+                Statement::FunctionDeclaration(f) => f.body.is_some(),
+                Statement::ClassDeclaration(c) => match &c.body.body[0] {
+                    oxc_ast::ast::ClassElement::MethodDefinition(m) => m.value.body.is_some(),
+                    _ => panic!("{source}: expected a method"),
+                },
+                _ => panic!("{source}: expected a function or class"),
+            }
+        };
+        // `owned`, `exact` and `transient` can't be types alone, so their `{}` is always the operand.
+        for source in [
+            "function g(): owned {}",
+            "function g(): exact {}",
+            "function g(): transient {}",
+            "function g(x: unknown): asserts x is owned {}",
+        ] {
+            assert!(!function_has_body(source), "{source}: `{{}}` should be the operand");
+        }
+        // A type that ends the return type is its top level, so `{}` after these is the body.
+        for source in [
+            "function f(): r {}",
+            "function h(x: unknown): x is r {}",
+            "class K { m(): this is r {} }",
+            "class K { m(): this is? r {} }",
+            "function g(x: unknown): asserts x is r {}",
+            "function f(): type r {}",
+            "function i(): R and type r {}",
+            "function f(): distribute U as r {}",
+            "function f(): () => r {}",
+            "class K { get g(): r {} }",
+        ] {
+            assert!(function_has_body(source), "{source}: `{{}}` should be the body");
+        }
+        // No body follows an arrow's `:` return type or a signature's, so `{` is the operand.
+        for source in [
+            "const a = (): r {} => ({});",
+            "interface I { m(): r {}; (): r {}; new (): r {}; get g(): r {} }",
+            "type T = { m(): r {} };",
+        ] {
+            parse(source);
+        }
+    }
+
+    #[test]
+    fn tightscript_permission_word_before_a_non_operand() {
+        let allocator = Allocator::default();
+        let first_statement = |source: &'static str| {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+            format!("{:?}", ret.program.body)
+        };
+        // `= w (b)` is the initializer, not a `=w` permission applied to `(b)`.
+        assert!(first_statement("let x: r = w (b);").contains("CallExpression"));
+        // `- 1` is subtraction and `as`/`satisfies` start another assertion.
+        assert!(first_statement("v as r - 1;").contains("BinaryExpression"));
+        assert!(first_statement("v as r as T;").contains("TSAsExpression"));
+        assert!(first_statement("v satisfies r satisfies T;").contains("TSSatisfiesExpression"));
+        // `-owned` and `-exact` still make an operand.
+        first_statement("type T = r -owned X;");
+    }
+
+    #[test]
+    fn tightscript_lazy_deep_type_parameter() {
+        let allocator = Allocator::default();
+        for source in [
+            "function f<lazy deep rwd T>(x: T) {}",
+            "class C<lazy deep d T> {}",
+            "function g<const lazy deep rw T>(x: T) {}",
+        ] {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+        }
+        // `lazy` alone is still a type parameter named `lazy`.
+        let ret = Parser::new(&allocator, "function h<lazy>() {}", SourceType::ts()).parse();
+        assert!(ret.diagnostics.is_empty(), "{:?}", ret.diagnostics);
+    }
+
+    #[test]
+    fn tightscript_tsx_hinted_type_parameters_with_comma_are_arrows() {
+        let allocator = Allocator::default();
+        for source in [
+            "const a = <owned T,>(x: T) => x;",
+            "const a = <exact? T,>(x: T) => x;",
+            "const a = <owned exact const T,>(x: T) => x;",
+            "const a = <lazy deep rwd T,>(x: T) => x;",
+        ] {
+            let ret = Parser::new(&allocator, source, SourceType::tsx()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+        }
+    }
+
+    #[test]
+    fn tightscript_tsx_deep_type_parameter_without_comma_is_jsx() {
+        let allocator = Allocator::default();
+        let source = "const a = <deep rw T>(x: T) => x;";
+        let ret = Parser::new(&allocator, source, SourceType::tsx()).parse();
+        assert!(!ret.diagnostics.is_empty(), "expected an unclosed JSX element");
+        let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+        assert!(ret.diagnostics.is_empty(), "{:?}", ret.diagnostics);
     }
 
     #[test]

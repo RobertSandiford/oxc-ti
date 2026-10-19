@@ -37,6 +37,10 @@ export type ExternalPluginEntry =
       specifier: string;
     };
 /**
+ * Placement of the comment created by the "Disable rule for this line" fix.
+ */
+export type DisableRuleCommentLocation = "separateLine" | "sameLine";
+/**
  * A set of glob patterns.
  * Patterns are matched against paths relative to the configuration file's directory.
  */
@@ -800,6 +804,16 @@ export interface OxlintOptions {
    * Equivalent to passing `--deny-warnings` on the CLI.
    */
   denyWarnings?: boolean;
+  /**
+   * Where the editor's "Disable rule for this line" fix puts its comment.
+   *
+   * - `"separateLine"` inserts `// oxlint-disable-next-line rule` on a new line above.
+   * - `"sameLine"` appends `// oxlint-disable-line rule` to the end of the line.
+   *
+   * Defaults to `"separateLine"`.
+   * Only supported in the root configuration file.
+   */
+  disableRuleCommentLocation?: DisableRuleCommentLocation;
   /**
    * Specify a warning threshold. Exits with an error status if warnings exceed this value.
    *

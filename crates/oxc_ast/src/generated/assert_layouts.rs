@@ -658,13 +658,14 @@ const _: () = {
     assert!(align_of::<FunctionType>() == 1);
 
     // Padding: 3 bytes
-    assert!(size_of::<FormalParameters>() == 48);
+    assert!(size_of::<FormalParameters>() == 56);
     assert!(align_of::<FormalParameters>() == 8);
     assert!(offset_of!(FormalParameters, span) == 0);
     assert!(offset_of!(FormalParameters, node_id) == 8);
     assert!(offset_of!(FormalParameters, kind) == 12);
     assert!(offset_of!(FormalParameters, items) == 16);
     assert!(offset_of!(FormalParameters, rest) == 40);
+    assert!(offset_of!(FormalParameters, function_type) == 48);
 
     // Padding: 0 bytes
     assert!(size_of::<FormalParameter>() == 72);
@@ -779,7 +780,7 @@ const _: () = {
     assert!(size_of::<MethodDefinitionType>() == 1);
     assert!(align_of::<MethodDefinitionType>() == 1);
 
-    // Padding: 3 bytes
+    // Padding: 2 bytes
     assert!(size_of::<PropertyDefinition>() == 88);
     assert!(align_of::<PropertyDefinition>() == 8);
     assert!(offset_of!(PropertyDefinition, span) == 0);
@@ -797,6 +798,7 @@ const _: () = {
     assert!(offset_of!(PropertyDefinition, definite) == 82);
     assert!(offset_of!(PropertyDefinition, readonly) == 83);
     assert!(offset_of!(PropertyDefinition, accessibility) == 84);
+    assert!(offset_of!(PropertyDefinition, permission) == 85);
 
     assert!(size_of::<PropertyDefinitionType>() == 1);
     assert!(align_of::<PropertyDefinitionType>() == 1);
@@ -825,7 +827,7 @@ const _: () = {
     assert!(size_of::<AccessorPropertyType>() == 1);
     assert!(align_of::<AccessorPropertyType>() == 1);
 
-    // Padding: 6 bytes
+    // Padding: 5 bytes
     assert!(size_of::<AccessorProperty>() == 88);
     assert!(align_of::<AccessorProperty>() == 8);
     assert!(offset_of!(AccessorProperty, span) == 0);
@@ -840,6 +842,7 @@ const _: () = {
     assert!(offset_of!(AccessorProperty, value) == 64);
     assert!(offset_of!(AccessorProperty, definite) == 80);
     assert!(offset_of!(AccessorProperty, accessibility) == 81);
+    assert!(offset_of!(AccessorProperty, permission) == 82);
 
     // Padding: 3 bytes
     assert!(size_of::<ImportExpression>() == 48);
@@ -1231,6 +1234,40 @@ const _: () = {
     assert!(align_of::<TSType>() == 8);
 
     // Padding: 0 bytes
+    assert!(size_of::<TSDistributeType>() == 56);
+    assert!(align_of::<TSDistributeType>() == 8);
+    assert!(offset_of!(TSDistributeType, span) == 0);
+    assert!(offset_of!(TSDistributeType, node_id) == 8);
+    assert!(offset_of!(TSDistributeType, scope_id) == 12);
+    assert!(offset_of!(TSDistributeType, source) == 16);
+    assert!(offset_of!(TSDistributeType, member) == 32);
+    assert!(offset_of!(TSDistributeType, body) == 40);
+
+    // Padding: 4 bytes
+    assert!(size_of::<TSTypeReturn>() == 48);
+    assert!(align_of::<TSTypeReturn>() == 8);
+    assert!(offset_of!(TSTypeReturn, span) == 0);
+    assert!(offset_of!(TSTypeReturn, node_id) == 8);
+    assert!(offset_of!(TSTypeReturn, value_type) == 16);
+    assert!(offset_of!(TSTypeReturn, type_annotation) == 32);
+
+    // Padding: 4 bytes
+    assert!(size_of::<TSProvideDeclaration>() == 48);
+    assert!(align_of::<TSProvideDeclaration>() == 8);
+    assert!(offset_of!(TSProvideDeclaration, span) == 0);
+    assert!(offset_of!(TSProvideDeclaration, node_id) == 8);
+    assert!(offset_of!(TSProvideDeclaration, type_annotation) == 16);
+    assert!(offset_of!(TSProvideDeclaration, type_alias) == 32);
+    assert!(offset_of!(TSProvideDeclaration, type_from) == 40);
+
+    // Padding: 4 bytes
+    assert!(size_of::<TSTypeFromDeclaration>() == 48);
+    assert!(align_of::<TSTypeFromDeclaration>() == 8);
+    assert!(offset_of!(TSTypeFromDeclaration, span) == 0);
+    assert!(offset_of!(TSTypeFromDeclaration, node_id) == 8);
+    assert!(offset_of!(TSTypeFromDeclaration, id) == 16);
+
+    // Padding: 0 bytes
     assert!(size_of::<TSConditionalType>() == 80);
     assert!(align_of::<TSConditionalType>() == 8);
     assert!(offset_of!(TSConditionalType, span) == 0);
@@ -1262,16 +1299,21 @@ const _: () = {
     assert!(offset_of!(TSParenthesizedType, node_id) == 8);
     assert!(offset_of!(TSParenthesizedType, type_annotation) == 16);
 
-    // Padding: 3 bytes
+    // Padding: 1 bytes
     assert!(size_of::<TSTypeOperator>() == 32);
     assert!(align_of::<TSTypeOperator>() == 8);
     assert!(offset_of!(TSTypeOperator, span) == 0);
     assert!(offset_of!(TSTypeOperator, node_id) == 8);
     assert!(offset_of!(TSTypeOperator, operator) == 12);
+    assert!(offset_of!(TSTypeOperator, lazy) == 13);
+    assert!(offset_of!(TSTypeOperator, sign) == 14);
     assert!(offset_of!(TSTypeOperator, type_annotation) == 16);
 
     assert!(size_of::<TSTypeOperatorOperator>() == 1);
     assert!(align_of::<TSTypeOperatorOperator>() == 1);
+
+    assert!(size_of::<TSPermissionSign>() == 1);
+    assert!(align_of::<TSPermissionSign>() == 1);
 
     // Padding: 4 bytes
     assert!(size_of::<TSArrayType>() == 32);
@@ -1295,12 +1337,13 @@ const _: () = {
     assert!(offset_of!(TSTupleType, node_id) == 8);
     assert!(offset_of!(TSTupleType, element_types) == 16);
 
-    // Padding: 3 bytes
+    // Padding: 2 bytes
     assert!(size_of::<TSNamedTupleMember>() == 64);
     assert!(align_of::<TSNamedTupleMember>() == 8);
     assert!(offset_of!(TSNamedTupleMember, span) == 0);
     assert!(offset_of!(TSNamedTupleMember, node_id) == 8);
     assert!(offset_of!(TSNamedTupleMember, optional) == 12);
+    assert!(offset_of!(TSNamedTupleMember, permission) == 13);
     assert!(offset_of!(TSNamedTupleMember, label) == 16);
     assert!(offset_of!(TSNamedTupleMember, element_type) == 48);
 
@@ -1431,17 +1474,24 @@ const _: () = {
     assert!(offset_of!(TSTypeParameterInstantiation, node_id) == 8);
     assert!(offset_of!(TSTypeParameterInstantiation, params) == 16);
 
-    // Padding: 1 bytes
-    assert!(size_of::<TSTypeParameter>() == 80);
+    // Padding: 2 bytes
+    assert!(size_of::<TSTypeParameter>() == 88);
     assert!(align_of::<TSTypeParameter>() == 8);
     assert!(offset_of!(TSTypeParameter, span) == 0);
     assert!(offset_of!(TSTypeParameter, node_id) == 8);
     assert!(offset_of!(TSTypeParameter, r#in) == 12);
     assert!(offset_of!(TSTypeParameter, out) == 13);
     assert!(offset_of!(TSTypeParameter, r#const) == 14);
+    assert!(offset_of!(TSTypeParameter, owned) == 15);
     assert!(offset_of!(TSTypeParameter, name) == 16);
     assert!(offset_of!(TSTypeParameter, constraint) == 48);
     assert!(offset_of!(TSTypeParameter, default) == 64);
+    assert!(offset_of!(TSTypeParameter, exact) == 80);
+    assert!(offset_of!(TSTypeParameter, exact_optional) == 81);
+    assert!(offset_of!(TSTypeParameter, deep_permission) == 82);
+    assert!(offset_of!(TSTypeParameter, deep_lazy) == 83);
+    assert!(offset_of!(TSTypeParameter, as_exact) == 84);
+    assert!(offset_of!(TSTypeParameter, as_exact_deep) == 85);
 
     // Padding: 4 bytes
     assert!(size_of::<TSTypeParameterDeclaration>() == 40);
@@ -1464,11 +1514,12 @@ const _: () = {
     assert!(size_of::<TSAccessibility>() == 1);
     assert!(align_of::<TSAccessibility>() == 1);
 
-    // Padding: 4 bytes
+    // Padding: 3 bytes
     assert!(size_of::<TSClassImplements>() == 40);
     assert!(align_of::<TSClassImplements>() == 8);
     assert!(offset_of!(TSClassImplements, span) == 0);
     assert!(offset_of!(TSClassImplements, node_id) == 8);
+    assert!(offset_of!(TSClassImplements, remove_exact) == 12);
     assert!(offset_of!(TSClassImplements, expression) == 16);
     assert!(offset_of!(TSClassImplements, type_arguments) == 32);
 
@@ -1491,7 +1542,7 @@ const _: () = {
     assert!(offset_of!(TSInterfaceBody, node_id) == 8);
     assert!(offset_of!(TSInterfaceBody, body) == 16);
 
-    // Padding: 1 bytes
+    // Padding: 0 bytes
     assert!(size_of::<TSPropertySignature>() == 40);
     assert!(align_of::<TSPropertySignature>() == 8);
     assert!(offset_of!(TSPropertySignature, span) == 0);
@@ -1499,19 +1550,21 @@ const _: () = {
     assert!(offset_of!(TSPropertySignature, computed) == 12);
     assert!(offset_of!(TSPropertySignature, optional) == 13);
     assert!(offset_of!(TSPropertySignature, readonly) == 14);
+    assert!(offset_of!(TSPropertySignature, permission) == 15);
     assert!(offset_of!(TSPropertySignature, key) == 16);
     assert!(offset_of!(TSPropertySignature, type_annotation) == 32);
 
     assert!(size_of::<TSSignature>() == 16);
     assert!(align_of::<TSSignature>() == 8);
 
-    // Padding: 2 bytes
+    // Padding: 1 bytes
     assert!(size_of::<TSIndexSignature>() == 64);
     assert!(align_of::<TSIndexSignature>() == 8);
     assert!(offset_of!(TSIndexSignature, span) == 0);
     assert!(offset_of!(TSIndexSignature, node_id) == 8);
     assert!(offset_of!(TSIndexSignature, readonly) == 12);
     assert!(offset_of!(TSIndexSignature, r#static) == 13);
+    assert!(offset_of!(TSIndexSignature, permission) == 14);
     assert!(offset_of!(TSIndexSignature, parameter) == 16);
     assert!(offset_of!(TSIndexSignature, type_annotation) == 56);
 
@@ -1562,20 +1615,22 @@ const _: () = {
     assert!(offset_of!(TSIndexSignatureName, name) == 16);
     assert!(offset_of!(TSIndexSignatureName, type_annotation) == 32);
 
-    // Padding: 4 bytes
+    // Padding: 3 bytes
     assert!(size_of::<TSInterfaceHeritage>() == 40);
     assert!(align_of::<TSInterfaceHeritage>() == 8);
     assert!(offset_of!(TSInterfaceHeritage, span) == 0);
     assert!(offset_of!(TSInterfaceHeritage, node_id) == 8);
+    assert!(offset_of!(TSInterfaceHeritage, remove_exact) == 12);
     assert!(offset_of!(TSInterfaceHeritage, type_name) == 16);
     assert!(offset_of!(TSInterfaceHeritage, type_arguments) == 32);
 
-    // Padding: 3 bytes
+    // Padding: 2 bytes
     assert!(size_of::<TSTypePredicate>() == 40);
     assert!(align_of::<TSTypePredicate>() == 8);
     assert!(offset_of!(TSTypePredicate, span) == 0);
     assert!(offset_of!(TSTypePredicate, node_id) == 8);
     assert!(offset_of!(TSTypePredicate, asserts) == 12);
+    assert!(offset_of!(TSTypePredicate, soft) == 13);
     assert!(offset_of!(TSTypePredicate, parameter_name) == 16);
     assert!(offset_of!(TSTypePredicate, type_annotation) == 32);
 
@@ -1695,7 +1750,7 @@ const _: () = {
     assert!(offset_of!(TSConstructorType, return_type) == 32);
     assert!(offset_of!(TSConstructorType, r#abstract) == 40);
 
-    // Padding: 6 bytes
+    // Padding: 4 bytes
     assert!(size_of::<TSMappedType>() == 104);
     assert!(align_of::<TSMappedType>() == 8);
     assert!(offset_of!(TSMappedType, span) == 0);
@@ -1707,6 +1762,8 @@ const _: () = {
     assert!(offset_of!(TSMappedType, type_annotation) == 80);
     assert!(offset_of!(TSMappedType, optional) == 96);
     assert!(offset_of!(TSMappedType, readonly) == 97);
+    assert!(offset_of!(TSMappedType, permission) == 98);
+    assert!(offset_of!(TSMappedType, permission_sign) == 99);
 
     assert!(size_of::<TSMappedTypeModifierOperator>() == 1);
     assert!(align_of::<TSMappedTypeModifierOperator>() == 1);
@@ -2503,13 +2560,14 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(align_of::<FunctionType>() == 1);
 
     // Padding: 3 bytes
-    assert!(size_of::<FormalParameters>() == 36);
+    assert!(size_of::<FormalParameters>() == 40);
     assert!(align_of::<FormalParameters>() == 4);
     assert!(offset_of!(FormalParameters, span) == 0);
     assert!(offset_of!(FormalParameters, node_id) == 8);
     assert!(offset_of!(FormalParameters, kind) == 12);
     assert!(offset_of!(FormalParameters, items) == 16);
     assert!(offset_of!(FormalParameters, rest) == 32);
+    assert!(offset_of!(FormalParameters, function_type) == 36);
 
     // Padding: 0 bytes
     assert!(size_of::<FormalParameter>() == 48);
@@ -2624,7 +2682,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(size_of::<MethodDefinitionType>() == 1);
     assert!(align_of::<MethodDefinitionType>() == 1);
 
-    // Padding: 3 bytes
+    // Padding: 2 bytes
     assert!(size_of::<PropertyDefinition>() == 60);
     assert!(align_of::<PropertyDefinition>() == 4);
     assert!(offset_of!(PropertyDefinition, span) == 0);
@@ -2642,6 +2700,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(PropertyDefinition, definite) == 54);
     assert!(offset_of!(PropertyDefinition, readonly) == 55);
     assert!(offset_of!(PropertyDefinition, accessibility) == 56);
+    assert!(offset_of!(PropertyDefinition, permission) == 57);
 
     assert!(size_of::<PropertyDefinitionType>() == 1);
     assert!(align_of::<PropertyDefinitionType>() == 1);
@@ -2670,7 +2729,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(size_of::<AccessorPropertyType>() == 1);
     assert!(align_of::<AccessorPropertyType>() == 1);
 
-    // Padding: 2 bytes
+    // Padding: 1 bytes
     assert!(size_of::<AccessorProperty>() == 56);
     assert!(align_of::<AccessorProperty>() == 4);
     assert!(offset_of!(AccessorProperty, span) == 0);
@@ -2685,6 +2744,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(AccessorProperty, value) == 44);
     assert!(offset_of!(AccessorProperty, definite) == 52);
     assert!(offset_of!(AccessorProperty, accessibility) == 53);
+    assert!(offset_of!(AccessorProperty, permission) == 54);
 
     // Padding: 3 bytes
     assert!(size_of::<ImportExpression>() == 32);
@@ -3076,6 +3136,40 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(align_of::<TSType>() == 4);
 
     // Padding: 0 bytes
+    assert!(size_of::<TSDistributeType>() == 36);
+    assert!(align_of::<TSDistributeType>() == 4);
+    assert!(offset_of!(TSDistributeType, span) == 0);
+    assert!(offset_of!(TSDistributeType, node_id) == 8);
+    assert!(offset_of!(TSDistributeType, scope_id) == 12);
+    assert!(offset_of!(TSDistributeType, source) == 16);
+    assert!(offset_of!(TSDistributeType, member) == 24);
+    assert!(offset_of!(TSDistributeType, body) == 28);
+
+    // Padding: 0 bytes
+    assert!(size_of::<TSTypeReturn>() == 28);
+    assert!(align_of::<TSTypeReturn>() == 4);
+    assert!(offset_of!(TSTypeReturn, span) == 0);
+    assert!(offset_of!(TSTypeReturn, node_id) == 8);
+    assert!(offset_of!(TSTypeReturn, value_type) == 12);
+    assert!(offset_of!(TSTypeReturn, type_annotation) == 20);
+
+    // Padding: 0 bytes
+    assert!(size_of::<TSProvideDeclaration>() == 28);
+    assert!(align_of::<TSProvideDeclaration>() == 4);
+    assert!(offset_of!(TSProvideDeclaration, span) == 0);
+    assert!(offset_of!(TSProvideDeclaration, node_id) == 8);
+    assert!(offset_of!(TSProvideDeclaration, type_annotation) == 12);
+    assert!(offset_of!(TSProvideDeclaration, type_alias) == 20);
+    assert!(offset_of!(TSProvideDeclaration, type_from) == 24);
+
+    // Padding: 0 bytes
+    assert!(size_of::<TSTypeFromDeclaration>() == 40);
+    assert!(align_of::<TSTypeFromDeclaration>() == 4);
+    assert!(offset_of!(TSTypeFromDeclaration, span) == 0);
+    assert!(offset_of!(TSTypeFromDeclaration, node_id) == 8);
+    assert!(offset_of!(TSTypeFromDeclaration, id) == 12);
+
+    // Padding: 0 bytes
     assert!(size_of::<TSConditionalType>() == 48);
     assert!(align_of::<TSConditionalType>() == 4);
     assert!(offset_of!(TSConditionalType, span) == 0);
@@ -3107,16 +3201,21 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSParenthesizedType, node_id) == 8);
     assert!(offset_of!(TSParenthesizedType, type_annotation) == 12);
 
-    // Padding: 3 bytes
+    // Padding: 1 bytes
     assert!(size_of::<TSTypeOperator>() == 24);
     assert!(align_of::<TSTypeOperator>() == 4);
     assert!(offset_of!(TSTypeOperator, span) == 0);
     assert!(offset_of!(TSTypeOperator, node_id) == 8);
     assert!(offset_of!(TSTypeOperator, operator) == 12);
+    assert!(offset_of!(TSTypeOperator, lazy) == 13);
+    assert!(offset_of!(TSTypeOperator, sign) == 14);
     assert!(offset_of!(TSTypeOperator, type_annotation) == 16);
 
     assert!(size_of::<TSTypeOperatorOperator>() == 1);
     assert!(align_of::<TSTypeOperatorOperator>() == 1);
+
+    assert!(size_of::<TSPermissionSign>() == 1);
+    assert!(align_of::<TSPermissionSign>() == 1);
 
     // Padding: 0 bytes
     assert!(size_of::<TSArrayType>() == 20);
@@ -3140,12 +3239,13 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSTupleType, node_id) == 8);
     assert!(offset_of!(TSTupleType, element_types) == 12);
 
-    // Padding: 3 bytes
+    // Padding: 2 bytes
     assert!(size_of::<TSNamedTupleMember>() == 48);
     assert!(align_of::<TSNamedTupleMember>() == 4);
     assert!(offset_of!(TSNamedTupleMember, span) == 0);
     assert!(offset_of!(TSNamedTupleMember, node_id) == 8);
     assert!(offset_of!(TSNamedTupleMember, optional) == 12);
+    assert!(offset_of!(TSNamedTupleMember, permission) == 13);
     assert!(offset_of!(TSNamedTupleMember, label) == 16);
     assert!(offset_of!(TSNamedTupleMember, element_type) == 40);
 
@@ -3276,17 +3376,24 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSTypeParameterInstantiation, node_id) == 8);
     assert!(offset_of!(TSTypeParameterInstantiation, params) == 12);
 
-    // Padding: 1 bytes
-    assert!(size_of::<TSTypeParameter>() == 60);
+    // Padding: 2 bytes
+    assert!(size_of::<TSTypeParameter>() == 68);
     assert!(align_of::<TSTypeParameter>() == 4);
     assert!(offset_of!(TSTypeParameter, span) == 0);
     assert!(offset_of!(TSTypeParameter, node_id) == 8);
     assert!(offset_of!(TSTypeParameter, r#in) == 12);
     assert!(offset_of!(TSTypeParameter, out) == 13);
     assert!(offset_of!(TSTypeParameter, r#const) == 14);
+    assert!(offset_of!(TSTypeParameter, owned) == 15);
     assert!(offset_of!(TSTypeParameter, name) == 16);
     assert!(offset_of!(TSTypeParameter, constraint) == 44);
     assert!(offset_of!(TSTypeParameter, default) == 52);
+    assert!(offset_of!(TSTypeParameter, exact) == 60);
+    assert!(offset_of!(TSTypeParameter, exact_optional) == 61);
+    assert!(offset_of!(TSTypeParameter, deep_permission) == 62);
+    assert!(offset_of!(TSTypeParameter, deep_lazy) == 63);
+    assert!(offset_of!(TSTypeParameter, as_exact) == 64);
+    assert!(offset_of!(TSTypeParameter, as_exact_deep) == 65);
 
     // Padding: 0 bytes
     assert!(size_of::<TSTypeParameterDeclaration>() == 28);
@@ -3309,13 +3416,14 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(size_of::<TSAccessibility>() == 1);
     assert!(align_of::<TSAccessibility>() == 1);
 
-    // Padding: 0 bytes
-    assert!(size_of::<TSClassImplements>() == 24);
+    // Padding: 3 bytes
+    assert!(size_of::<TSClassImplements>() == 28);
     assert!(align_of::<TSClassImplements>() == 4);
     assert!(offset_of!(TSClassImplements, span) == 0);
     assert!(offset_of!(TSClassImplements, node_id) == 8);
-    assert!(offset_of!(TSClassImplements, expression) == 12);
-    assert!(offset_of!(TSClassImplements, type_arguments) == 20);
+    assert!(offset_of!(TSClassImplements, remove_exact) == 12);
+    assert!(offset_of!(TSClassImplements, expression) == 16);
+    assert!(offset_of!(TSClassImplements, type_arguments) == 24);
 
     // Padding: 3 bytes
     assert!(size_of::<TSInterfaceDeclaration>() == 72);
@@ -3336,7 +3444,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSInterfaceBody, node_id) == 8);
     assert!(offset_of!(TSInterfaceBody, body) == 12);
 
-    // Padding: 1 bytes
+    // Padding: 0 bytes
     assert!(size_of::<TSPropertySignature>() == 28);
     assert!(align_of::<TSPropertySignature>() == 4);
     assert!(offset_of!(TSPropertySignature, span) == 0);
@@ -3344,19 +3452,21 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSPropertySignature, computed) == 12);
     assert!(offset_of!(TSPropertySignature, optional) == 13);
     assert!(offset_of!(TSPropertySignature, readonly) == 14);
+    assert!(offset_of!(TSPropertySignature, permission) == 15);
     assert!(offset_of!(TSPropertySignature, key) == 16);
     assert!(offset_of!(TSPropertySignature, type_annotation) == 24);
 
     assert!(size_of::<TSSignature>() == 8);
     assert!(align_of::<TSSignature>() == 4);
 
-    // Padding: 2 bytes
+    // Padding: 1 bytes
     assert!(size_of::<TSIndexSignature>() == 48);
     assert!(align_of::<TSIndexSignature>() == 4);
     assert!(offset_of!(TSIndexSignature, span) == 0);
     assert!(offset_of!(TSIndexSignature, node_id) == 8);
     assert!(offset_of!(TSIndexSignature, readonly) == 12);
     assert!(offset_of!(TSIndexSignature, r#static) == 13);
+    assert!(offset_of!(TSIndexSignature, permission) == 14);
     assert!(offset_of!(TSIndexSignature, parameter) == 16);
     assert!(offset_of!(TSIndexSignature, type_annotation) == 44);
 
@@ -3407,20 +3517,22 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSIndexSignatureName, name) == 12);
     assert!(offset_of!(TSIndexSignatureName, type_annotation) == 24);
 
-    // Padding: 0 bytes
-    assert!(size_of::<TSInterfaceHeritage>() == 24);
+    // Padding: 3 bytes
+    assert!(size_of::<TSInterfaceHeritage>() == 28);
     assert!(align_of::<TSInterfaceHeritage>() == 4);
     assert!(offset_of!(TSInterfaceHeritage, span) == 0);
     assert!(offset_of!(TSInterfaceHeritage, node_id) == 8);
-    assert!(offset_of!(TSInterfaceHeritage, type_name) == 12);
-    assert!(offset_of!(TSInterfaceHeritage, type_arguments) == 20);
+    assert!(offset_of!(TSInterfaceHeritage, remove_exact) == 12);
+    assert!(offset_of!(TSInterfaceHeritage, type_name) == 16);
+    assert!(offset_of!(TSInterfaceHeritage, type_arguments) == 24);
 
-    // Padding: 3 bytes
+    // Padding: 2 bytes
     assert!(size_of::<TSTypePredicate>() == 28);
     assert!(align_of::<TSTypePredicate>() == 4);
     assert!(offset_of!(TSTypePredicate, span) == 0);
     assert!(offset_of!(TSTypePredicate, node_id) == 8);
     assert!(offset_of!(TSTypePredicate, asserts) == 12);
+    assert!(offset_of!(TSTypePredicate, soft) == 13);
     assert!(offset_of!(TSTypePredicate, parameter_name) == 16);
     assert!(offset_of!(TSTypePredicate, type_annotation) == 24);
 
@@ -3540,7 +3652,7 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSConstructorType, return_type) == 24);
     assert!(offset_of!(TSConstructorType, r#abstract) == 28);
 
-    // Padding: 2 bytes
+    // Padding: 0 bytes
     assert!(size_of::<TSMappedType>() == 72);
     assert!(align_of::<TSMappedType>() == 4);
     assert!(offset_of!(TSMappedType, span) == 0);
@@ -3552,6 +3664,8 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSMappedType, type_annotation) == 60);
     assert!(offset_of!(TSMappedType, optional) == 68);
     assert!(offset_of!(TSMappedType, readonly) == 69);
+    assert!(offset_of!(TSMappedType, permission) == 70);
+    assert!(offset_of!(TSMappedType, permission_sign) == 71);
 
     assert!(size_of::<TSMappedTypeModifierOperator>() == 1);
     assert!(align_of::<TSMappedTypeModifierOperator>() == 1);

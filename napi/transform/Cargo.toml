@@ -25,6 +25,9 @@ doctest = false
 oxc = { workspace = true, features = ["full"] }
 oxc_napi = { workspace = true }
 oxc_sourcemap = { workspace = true, features = ["napi"] }
+oxc_ti_compile = { workspace = true }
+oxc_ts_blank = { workspace = true }
+tungsten_passes = { workspace = true }
 
 rustc-hash = { workspace = true }
 

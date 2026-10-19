@@ -278,7 +278,14 @@ impl<'a> IsolatedDeclarations<'a> {
 
         let ts_type = TSType::new_ts_tuple_type(SPAN, element_types, self);
         if is_const {
-            TSType::new_ts_type_operator_type(SPAN, TSTypeOperatorOperator::Readonly, ts_type, self)
+            TSType::new_ts_type_operator_type(
+                SPAN,
+                TSTypeOperatorOperator::Readonly,
+                false,
+                None,
+                ts_type,
+                self,
+            )
         } else {
             ts_type
         }

@@ -120,81 +120,85 @@ export const NODE_TYPE_IDS_MAP = /* @__PURE__ */ new Map([
   ["TSConstructSignatureDeclaration", 114],
   ["TSConstructorType", 115],
   ["TSDeclareFunction", 116],
-  ["TSEmptyBodyFunctionExpression", 117],
-  ["TSEnumBody", 118],
-  ["TSEnumDeclaration", 119],
-  ["TSEnumMember", 120],
-  ["TSExportAssignment", 121],
-  ["TSExternalModuleReference", 122],
-  ["TSFunctionType", 123],
-  ["TSImportEqualsDeclaration", 124],
-  ["TSImportType", 125],
-  ["TSIndexSignature", 126],
-  ["TSIndexedAccessType", 127],
-  ["TSInferType", 128],
-  ["TSInstantiationExpression", 129],
-  ["TSInterfaceBody", 130],
-  ["TSInterfaceDeclaration", 131],
-  ["TSInterfaceHeritage", 132],
-  ["TSIntersectionType", 133],
-  ["TSJSDocNonNullableType", 134],
-  ["TSJSDocNullableType", 135],
-  ["TSLiteralType", 136],
-  ["TSMappedType", 137],
-  ["TSMethodSignature", 138],
-  ["TSModuleBlock", 139],
-  ["TSModuleDeclaration", 140],
-  ["TSNamedTupleMember", 141],
-  ["TSNamespaceExportDeclaration", 142],
-  ["TSNonNullExpression", 143],
-  ["TSOptionalType", 144],
-  ["TSParameterProperty", 145],
-  ["TSParenthesizedType", 146],
-  ["TSPropertySignature", 147],
-  ["TSQualifiedName", 148],
-  ["TSRestType", 149],
-  ["TSSatisfiesExpression", 150],
-  ["TSTemplateLiteralType", 151],
-  ["TSTupleType", 152],
-  ["TSTypeAliasDeclaration", 153],
-  ["TSTypeAnnotation", 154],
-  ["TSTypeAssertion", 155],
-  ["TSTypeLiteral", 156],
-  ["TSTypeOperator", 157],
-  ["TSTypeParameter", 158],
-  ["TSTypeParameterDeclaration", 159],
-  ["TSTypeParameterInstantiation", 160],
-  ["TSTypePredicate", 161],
-  ["TSTypeQuery", 162],
-  ["TSTypeReference", 163],
-  ["TSUnionType", 164],
-  ["onCodePathStart", 165],
-  ["onCodePathEnd", 166],
-  ["onCodePathSegmentStart", 167],
-  ["onCodePathSegmentEnd", 168],
-  ["onUnreachableCodePathSegmentStart", 169],
-  ["onUnreachableCodePathSegmentEnd", 170],
-  ["onCodePathSegmentLoop", 171],
+  ["TSDistributeType", 117],
+  ["TSEmptyBodyFunctionExpression", 118],
+  ["TSEnumBody", 119],
+  ["TSEnumDeclaration", 120],
+  ["TSEnumMember", 121],
+  ["TSExportAssignment", 122],
+  ["TSExternalModuleReference", 123],
+  ["TSFunctionType", 124],
+  ["TSImportEqualsDeclaration", 125],
+  ["TSImportType", 126],
+  ["TSIndexSignature", 127],
+  ["TSIndexedAccessType", 128],
+  ["TSInferType", 129],
+  ["TSInstantiationExpression", 130],
+  ["TSInterfaceBody", 131],
+  ["TSInterfaceDeclaration", 132],
+  ["TSInterfaceHeritage", 133],
+  ["TSIntersectionType", 134],
+  ["TSJSDocNonNullableType", 135],
+  ["TSJSDocNullableType", 136],
+  ["TSLiteralType", 137],
+  ["TSMappedType", 138],
+  ["TSMethodSignature", 139],
+  ["TSModuleBlock", 140],
+  ["TSModuleDeclaration", 141],
+  ["TSNamedTupleMember", 142],
+  ["TSNamespaceExportDeclaration", 143],
+  ["TSNonNullExpression", 144],
+  ["TSOptionalType", 145],
+  ["TSParameterProperty", 146],
+  ["TSParenthesizedType", 147],
+  ["TSPropertySignature", 148],
+  ["TSProvideDeclaration", 149],
+  ["TSQualifiedName", 150],
+  ["TSRestType", 151],
+  ["TSSatisfiesExpression", 152],
+  ["TSTemplateLiteralType", 153],
+  ["TSTupleType", 154],
+  ["TSTypeAliasDeclaration", 155],
+  ["TSTypeAnnotation", 156],
+  ["TSTypeAssertion", 157],
+  ["TSTypeFromDeclaration", 158],
+  ["TSTypeLiteral", 159],
+  ["TSTypeOperator", 160],
+  ["TSTypeParameter", 161],
+  ["TSTypeParameterDeclaration", 162],
+  ["TSTypeParameterInstantiation", 163],
+  ["TSTypePredicate", 164],
+  ["TSTypeQuery", 165],
+  ["TSTypeReference", 166],
+  ["TSTypeReturn", 167],
+  ["TSUnionType", 168],
+  ["onCodePathStart", 169],
+  ["onCodePathEnd", 170],
+  ["onCodePathSegmentStart", 171],
+  ["onCodePathSegmentEnd", 172],
+  ["onUnreachableCodePathSegmentStart", 173],
+  ["onUnreachableCodePathSegmentEnd", 174],
+  ["onCodePathSegmentLoop", 175],
 ]);
 
 /** Count of all node types (both leaf and non-leaf nodes) */
-export const NODE_TYPES_COUNT = 165;
+export const NODE_TYPES_COUNT = 169;
 
 /** Count of leaf node types */
 export const LEAF_NODE_TYPES_COUNT = 27;
 
 /** Total count of node types and CFG events */
-export const TYPE_IDS_COUNT = 172;
+export const TYPE_IDS_COUNT = 176;
 
 /** Type IDs which match `:statement` selector class */
 export const STATEMENT_NODE_TYPE_IDS = [
   0, 1, 35, 36, 41, 44, 46, 47, 48, 49, 51, 52, 53, 54, 55, 58, 60, 65, 78, 83, 86, 87, 91, 93, 94,
-  111, 114, 119, 124, 131, 140, 142, 153, 159,
+  111, 114, 120, 125, 132, 141, 143, 149, 155, 158, 162,
 ];
 
 /** Type IDs which match `:declaration` selector class */
 export const DECLARATION_NODE_TYPE_IDS = [
-  41, 47, 48, 49, 55, 60, 91, 111, 114, 119, 124, 131, 140, 142, 153, 159,
+  41, 47, 48, 49, 55, 60, 91, 111, 114, 120, 125, 132, 141, 143, 149, 155, 158, 162,
 ];
 
 /**
@@ -203,7 +207,7 @@ export const DECLARATION_NODE_TYPE_IDS = [
  */
 export const PATTERN_NODE_TYPE_IDS = [
   2, 6, 8, 28, 29, 30, 31, 32, 33, 34, 37, 39, 42, 43, 56, 57, 62, 66, 67, 68, 70, 71, 72, 73, 79,
-  84, 85, 88, 89, 90, 95, 101, 110, 117, 129, 143, 150, 156,
+  84, 85, 88, 89, 90, 95, 101, 110, 118, 130, 144, 152, 159,
 ];
 
 /**
@@ -212,7 +216,7 @@ export const PATTERN_NODE_TYPE_IDS = [
  */
 export const EXPRESSION_NODE_TYPE_IDS = [
   2, 6, 8, 28, 30, 31, 33, 34, 37, 39, 42, 43, 56, 57, 62, 66, 67, 68, 70, 71, 73, 79, 84, 85, 88,
-  89, 90, 95, 101, 110, 117, 129, 143, 150, 156,
+  89, 90, 95, 101, 110, 118, 130, 144, 152, 159,
 ];
 
 /** Type IDs which match `:function` selector class */

@@ -1377,9 +1377,9 @@ unsafe fn walk_statement<'a, Tr: Traverse<'a>>(
         | Statement::TSExternalModuleDeclaration(_)
         | Statement::TSNamespaceDeclaration(_)
         | Statement::TSGlobalDeclaration(_)
-        | Statement::TSImportEqualsDeclaration(_) => {
-            walk_declaration(traverser, node as *mut _, ctx)
-        }
+        | Statement::TSImportEqualsDeclaration(_)
+        | Statement::TSProvideDeclaration(_)
+        | Statement::TSTypeFromDeclaration(_) => walk_declaration(traverser, node as *mut _, ctx),
         Statement::ImportDeclaration(_)
         | Statement::ExportAllDeclaration(_)
         | Statement::ExportDefaultDeclaration(_)
@@ -1483,6 +1483,12 @@ unsafe fn walk_declaration<'a, Tr: Traverse<'a>>(
         }
         Declaration::TSImportEqualsDeclaration(node) => {
             walk_ts_import_equals_declaration(traverser, (&mut **node) as *mut _, ctx)
+        }
+        Declaration::TSProvideDeclaration(node) => {
+            walk_ts_provide_declaration(traverser, (&mut **node) as *mut _, ctx)
+        }
+        Declaration::TSTypeFromDeclaration(node) => {
+            walk_ts_type_from_declaration(traverser, (&mut **node) as *mut _, ctx)
         }
     }
     traverser.exit_declaration(&mut *node, ctx);
@@ -2344,6 +2350,13 @@ unsafe fn walk_formal_parameters<'a, Tr: Traverse<'a>>(
     {
         ctx.retag_stack(AncestorType::FormalParametersRest);
         walk_formal_parameter_rest(traverser, (&mut **field) as *mut _, ctx);
+    }
+    if let Some(field) = &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_FORMAL_PARAMETERS_FUNCTION_TYPE)
+        as *mut Option<ArenaBox<TSTypeAnnotation>>)
+    {
+        ctx.retag_stack(AncestorType::FormalParametersFunctionType);
+        walk_ts_type_annotation(traverser, (&mut **field) as *mut _, ctx);
     }
     ctx.pop_stack(pop_token);
     traverser.exit_formal_parameters(&mut *node, ctx);
@@ -4130,8 +4143,125 @@ unsafe fn walk_ts_type<'a, Tr: Traverse<'a>>(
         TSType::JSDocUnknownType(node) => {
             walk_js_doc_unknown_type(traverser, (&mut **node) as *mut _, ctx)
         }
+        TSType::TSDistributeType(node) => {
+            walk_ts_distribute_type(traverser, (&mut **node) as *mut _, ctx)
+        }
+        TSType::TSTypeReturn(node) => walk_ts_type_return(traverser, (&mut **node) as *mut _, ctx),
     }
     traverser.exit_ts_type(&mut *node, ctx);
+}
+
+unsafe fn walk_ts_distribute_type<'a, Tr: Traverse<'a>>(
+    traverser: &mut Tr,
+    node: *mut TSDistributeType<'a>,
+    ctx: &mut TraverseCtx<'a>,
+) {
+    traverser.enter_ts_distribute_type(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::TSDistributeTypeSource(
+        ancestor::TSDistributeTypeWithoutSource(node, PhantomData),
+    ));
+    walk_ts_type(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_TS_DISTRIBUTE_TYPE_SOURCE) as *mut TSType,
+        ctx,
+    );
+    let previous_scope_id = ctx.current_scope_id();
+    let current_scope_id = (*((node as *mut u8).add(ancestor::OFFSET_TS_DISTRIBUTE_TYPE_SCOPE_ID)
+        as *mut Cell<Option<ScopeId>>))
+        .get()
+        .unwrap();
+    ctx.set_current_scope_id(current_scope_id);
+    if let Some(field) = &mut *((node as *mut u8).add(ancestor::OFFSET_TS_DISTRIBUTE_TYPE_MEMBER)
+        as *mut Option<ArenaBox<TSTypeParameter>>)
+    {
+        ctx.retag_stack(AncestorType::TSDistributeTypeMember);
+        walk_ts_type_parameter(traverser, (&mut **field) as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::TSDistributeTypeBody);
+    walk_ts_type(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_TS_DISTRIBUTE_TYPE_BODY) as *mut TSType,
+        ctx,
+    );
+    ctx.pop_stack(pop_token);
+    ctx.set_current_scope_id(previous_scope_id);
+    traverser.exit_ts_distribute_type(&mut *node, ctx);
+}
+
+unsafe fn walk_ts_type_return<'a, Tr: Traverse<'a>>(
+    traverser: &mut Tr,
+    node: *mut TSTypeReturn<'a>,
+    ctx: &mut TraverseCtx<'a>,
+) {
+    traverser.enter_ts_type_return(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::TSTypeReturnValueType(
+        ancestor::TSTypeReturnWithoutValueType(node, PhantomData),
+    ));
+    if let Some(field) = &mut *((node as *mut u8).add(ancestor::OFFSET_TS_TYPE_RETURN_VALUE_TYPE)
+        as *mut Option<TSType>)
+    {
+        walk_ts_type(traverser, field as *mut _, ctx);
+    }
+    ctx.retag_stack(AncestorType::TSTypeReturnTypeAnnotation);
+    walk_ts_type(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_TS_TYPE_RETURN_TYPE_ANNOTATION) as *mut TSType,
+        ctx,
+    );
+    ctx.pop_stack(pop_token);
+    traverser.exit_ts_type_return(&mut *node, ctx);
+}
+
+unsafe fn walk_ts_provide_declaration<'a, Tr: Traverse<'a>>(
+    traverser: &mut Tr,
+    node: *mut TSProvideDeclaration<'a>,
+    ctx: &mut TraverseCtx<'a>,
+) {
+    traverser.enter_ts_provide_declaration(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::TSProvideDeclarationTypeAnnotation(
+        ancestor::TSProvideDeclarationWithoutTypeAnnotation(node, PhantomData),
+    ));
+    if let Some(field) = &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_TS_PROVIDE_DECLARATION_TYPE_ANNOTATION)
+        as *mut Option<TSType>)
+    {
+        walk_ts_type(traverser, field as *mut _, ctx);
+    }
+    if let Some(field) = &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_TS_PROVIDE_DECLARATION_TYPE_ALIAS)
+        as *mut Option<ArenaBox<TSTypeAliasDeclaration>>)
+    {
+        ctx.retag_stack(AncestorType::TSProvideDeclarationTypeAlias);
+        walk_ts_type_alias_declaration(traverser, (&mut **field) as *mut _, ctx);
+    }
+    if let Some(field) = &mut *((node as *mut u8)
+        .add(ancestor::OFFSET_TS_PROVIDE_DECLARATION_TYPE_FROM)
+        as *mut Option<ArenaBox<TSTypeFromDeclaration>>)
+    {
+        ctx.retag_stack(AncestorType::TSProvideDeclarationTypeFrom);
+        walk_ts_type_from_declaration(traverser, (&mut **field) as *mut _, ctx);
+    }
+    ctx.pop_stack(pop_token);
+    traverser.exit_ts_provide_declaration(&mut *node, ctx);
+}
+
+unsafe fn walk_ts_type_from_declaration<'a, Tr: Traverse<'a>>(
+    traverser: &mut Tr,
+    node: *mut TSTypeFromDeclaration<'a>,
+    ctx: &mut TraverseCtx<'a>,
+) {
+    traverser.enter_ts_type_from_declaration(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::TSTypeFromDeclarationId(
+        ancestor::TSTypeFromDeclarationWithoutId(node, PhantomData),
+    ));
+    walk_binding_identifier(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_TS_TYPE_FROM_DECLARATION_ID)
+            as *mut BindingIdentifier,
+        ctx,
+    );
+    ctx.pop_stack(pop_token);
+    traverser.exit_ts_type_from_declaration(&mut *node, ctx);
 }
 
 unsafe fn walk_ts_conditional_type<'a, Tr: Traverse<'a>>(
@@ -4421,7 +4551,9 @@ unsafe fn walk_ts_tuple_element<'a, Tr: Traverse<'a>>(
         | TSTupleElement::TSParenthesizedType(_)
         | TSTupleElement::JSDocNullableType(_)
         | TSTupleElement::JSDocNonNullableType(_)
-        | TSTupleElement::JSDocUnknownType(_) => walk_ts_type(traverser, node as *mut _, ctx),
+        | TSTupleElement::JSDocUnknownType(_)
+        | TSTupleElement::TSDistributeType(_)
+        | TSTupleElement::TSTypeReturn(_) => walk_ts_type(traverser, node as *mut _, ctx),
     }
     traverser.exit_ts_tuple_element(&mut *node, ctx);
 }

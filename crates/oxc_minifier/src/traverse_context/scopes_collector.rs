@@ -628,6 +628,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             Statement::TSNamespaceDeclaration(it) => self.visit_ts_namespace_declaration(it),
             Statement::TSGlobalDeclaration(it) => self.visit_ts_global_declaration(it),
+            Statement::TSProvideDeclaration(it) => self.visit_ts_provide_declaration(it),
             Statement::ExportDefaultDeclaration(it) => self.visit_export_default_declaration(it),
             Statement::ExportDeclaration(it) => self.visit_export_declaration(it),
             Statement::TSExportAssignment(it) => self.visit_ts_export_assignment(it),
@@ -638,6 +639,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `DebuggerStatement`
                 // `EmptyStatement`
                 // `TSImportEqualsDeclaration`
+                // `TSTypeFromDeclaration`
                 // `ImportDeclaration`
                 // `ExportAllDeclaration`
                 // `ExportNamedDeclaration`
@@ -678,9 +680,11 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             }
             Declaration::TSNamespaceDeclaration(it) => self.visit_ts_namespace_declaration(it),
             Declaration::TSGlobalDeclaration(it) => self.visit_ts_global_declaration(it),
+            Declaration::TSProvideDeclaration(it) => self.visit_ts_provide_declaration(it),
             _ => {
                 // Remaining variants do not contain scopes:
                 // `TSImportEqualsDeclaration`
+                // `TSTypeFromDeclaration`
             }
         }
     }
@@ -968,6 +972,9 @@ impl<'a> Visit<'a> for ChildScopeCollector {
         self.visit_formal_parameter_list(&it.items);
         if let Some(rest) = &it.rest {
             self.visit_formal_parameter_rest(rest);
+        }
+        if let Some(function_type) = &it.function_type {
+            self.visit_ts_type_annotation(function_type);
         }
     }
 
@@ -1641,6 +1648,8 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             TSType::TSParenthesizedType(it) => self.visit_ts_parenthesized_type(it),
             TSType::JSDocNullableType(it) => self.visit_js_doc_nullable_type(it),
             TSType::JSDocNonNullableType(it) => self.visit_js_doc_non_nullable_type(it),
+            TSType::TSDistributeType(it) => self.visit_ts_distribute_type(it),
+            TSType::TSTypeReturn(it) => self.visit_ts_type_return(it),
             _ => {
                 // Remaining variants do not contain scopes:
                 // `TSAnyKeyword`
@@ -1660,6 +1669,35 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `JSDocUnknownType`
             }
         }
+    }
+
+    #[inline]
+    fn visit_ts_distribute_type(&mut self, it: &TSDistributeType<'a>) {
+        self.visit_ts_type(&it.source);
+        self.add_scope(&it.scope_id);
+    }
+
+    #[inline]
+    fn visit_ts_type_return(&mut self, it: &TSTypeReturn<'a>) {
+        if let Some(value_type) = &it.value_type {
+            self.visit_ts_type(value_type);
+        }
+        self.visit_ts_type(&it.type_annotation);
+    }
+
+    #[inline]
+    fn visit_ts_provide_declaration(&mut self, it: &TSProvideDeclaration<'a>) {
+        if let Some(type_annotation) = &it.type_annotation {
+            self.visit_ts_type(type_annotation);
+        }
+        if let Some(type_alias) = &it.type_alias {
+            self.visit_ts_type_alias_declaration(type_alias);
+        }
+    }
+
+    #[inline(always)]
+    fn visit_ts_type_from_declaration(&mut self, it: &TSTypeFromDeclaration<'a>) {
+        // Struct does not contain a scope. Halt traversal.
     }
 
     #[inline]
@@ -1746,6 +1784,8 @@ impl<'a> Visit<'a> for ChildScopeCollector {
             TSTupleElement::TSParenthesizedType(it) => self.visit_ts_parenthesized_type(it),
             TSTupleElement::JSDocNullableType(it) => self.visit_js_doc_nullable_type(it),
             TSTupleElement::JSDocNonNullableType(it) => self.visit_js_doc_non_nullable_type(it),
+            TSTupleElement::TSDistributeType(it) => self.visit_ts_distribute_type(it),
+            TSTupleElement::TSTypeReturn(it) => self.visit_ts_type_return(it),
             _ => {
                 // Remaining variants do not contain scopes:
                 // `TSAnyKeyword`

@@ -13,20 +13,9 @@
   <br>
 </p>
 
-<div align="center">
+A fork of Oxc for TightScript
 
-[![MIT licensed][license-badge]][license-url]
-[![Build Status][ci-badge]][ci-url]
-[![Code Coverage][code-coverage-badge]][code-coverage-url]
-[![CodSpeed Badge](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/oxc-project/oxc)
-
-[![Discord chat][discord-badge]][discord-url]
-[![Playground][playground-badge]][playground-url]
-[![Website][website-badge]][website-url]
-
-</div>
-
-## ⚓ Oxc
+## ⚓ Oxc-ti
 
 _/oʊ ɛks siː/_
 
@@ -38,12 +27,6 @@ For more information, check out our website at [oxc.rs](https://oxc.rs).
 
 <sub>\* Oxidation is the chemical process that creates rust</sub>
 
-## 🙋 Who's using Oxc?
-
-[Rolldown] and [Nuxt] use Oxc for parsing. [Rolldown] also uses Oxc for transformation and minification. [Nova], [swc-node], and [knip] use [oxc_resolver][docs-resolver-url] for module resolution. [Preact], [Shopify], [ByteDance], and [Shopee] use oxlint for linting.
-
-[See more projects using Oxc →](https://oxc.rs/docs/guide/projects.html)
-
 ## 🔧 Lint or Format a Codebase
 
 - **Lint**: [Oxlint](https://oxc.rs/docs/guide/usage/linter) — `npx oxlint@latest`
@@ -51,47 +34,20 @@ For more information, check out our website at [oxc.rs](https://oxc.rs).
 
 ## 🧰 Build Tooling on Top of Oxc
 
-- Parse JavaScript and TypeScript: [Parser](https://oxc.rs/docs/guide/usage/parser)
-- Transform TypeScript, JSX, and modern JavaScript: [Transformer](https://oxc.rs/docs/guide/usage/transformer)
+- Parse JavaScript, TightScript, and TypeScript: [Parser](https://oxc.rs/docs/guide/usage/parser)
+- Transform TightScript, TypeScript, JSX, and modern JavaScript: [Transformer](https://oxc.rs/docs/guide/usage/transformer)
 - Minify JavaScript for production builds: [Minifier](https://oxc.rs/docs/guide/usage/minifier)
-- Resolve modules for JavaScript and TypeScript: [Resolver](https://oxc.rs/docs/guide/usage/resolver)
-
-## ✍️ Contribute
-
-Check out some of the [good first issues](https://github.com/oxc-project/oxc/contribute) or ask us on [Discord][discord-url].
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidance, or read the complete [contributing guide on our website →](https://oxc.rs/docs/contribute/introduction.html)
-
-If you are unable to contribute by code, you can still participate by:
-
-- Add a [GitHub Star](https://github.com/oxc-project/oxc/stargazers) to the project
-- Join us on [Discord][discord-url]
-- [Follow me on X](https://x.com/boshen_c) and post about this project
+- Resolve modules for JavaScript, TightScript, and TypeScript: [Resolver](https://oxc.rs/docs/guide/usage/resolver)
 
 ## 📚 Other Resources
 
 - [Troubleshooting](https://oxc.rs/docs/guide/troubleshooting)
-- [Benchmarks](https://oxc.rs/docs/guide/benchmarks)
-- [Talks and media](https://oxc.rs/docs/guide/media)
-- [Team](https://oxc.rs/team)
-- [Endorsements](https://oxc.rs/endorsements)
-- [Releases](https://github.com/oxc-project/oxc/releases)
-
-# [Sponsored By](https://oxc.rs/sponsor)
-
-<p align="center">
-  <a href="https://oxc.rs/sponsor">
-    <img src="https://raw.githubusercontent.com/oxc-project/sponsors/main/sponsors.svg" alt="Our sponsors" />
-  </a>
-</p>
 
 ## 📖 License
 
-Oxc is free and open-source software licensed under the [MIT License](./LICENSE).
+Oxc-ti is free and open-source software licensed under the [MIT License](./LICENSE).
 
-Thank you to [namespace.so](https://namespace.so) for powering our CI/CD pipelines with fast, free macOS and Linux runners.
-
-Oxc ports or copies code from other open source projects, their licenses are listed in [**Third-party library licenses**](./THIRD-PARTY-LICENSE).
+Oxc-ti ports or copies code from Oxc and other open source projects, their licenses are listed in [**Third-party library licenses**](./THIRD-PARTY-LICENSE).
 
 [discord-badge]: https://img.shields.io/discord/1079625926024900739?logo=discord&label=Discord
 [discord-url]: https://discord.gg/9uXCAwqQZW

@@ -2630,6 +2630,8 @@ impl<'a> Statement<'a> {
                 | Self::TSNamespaceDeclaration(_)
                 | Self::TSGlobalDeclaration(_)
                 | Self::TSImportEqualsDeclaration(_)
+                | Self::TSProvideDeclaration(_)
+                | Self::TSTypeFromDeclaration(_)
         )
     }
 
@@ -2736,6 +2738,8 @@ impl<'a> TryFrom<Statement<'a>> for Declaration<'a> {
             Statement::TSImportEqualsDeclaration(o) => {
                 Ok(Declaration::TSImportEqualsDeclaration(o))
             }
+            Statement::TSProvideDeclaration(o) => Ok(Declaration::TSProvideDeclaration(o)),
+            Statement::TSTypeFromDeclaration(o) => Ok(Declaration::TSTypeFromDeclaration(o)),
             _ => Err(()),
         }
     }
@@ -2760,6 +2764,8 @@ impl<'a> From<Declaration<'a>> for Statement<'a> {
             Declaration::TSNamespaceDeclaration(o) => Statement::TSNamespaceDeclaration(o),
             Declaration::TSGlobalDeclaration(o) => Statement::TSGlobalDeclaration(o),
             Declaration::TSImportEqualsDeclaration(o) => Statement::TSImportEqualsDeclaration(o),
+            Declaration::TSProvideDeclaration(o) => Statement::TSProvideDeclaration(o),
+            Declaration::TSTypeFromDeclaration(o) => Statement::TSTypeFromDeclaration(o),
         }
     }
 }
@@ -5186,6 +5192,8 @@ impl<'a> TSTupleElement<'a> {
                 | Self::JSDocNullableType(_)
                 | Self::JSDocNonNullableType(_)
                 | Self::JSDocUnknownType(_)
+                | Self::TSDistributeType(_)
+                | Self::TSTypeReturn(_)
         )
     }
 
@@ -5315,6 +5323,8 @@ impl<'a> TryFrom<TSTupleElement<'a>> for TSType<'a> {
             TSTupleElement::JSDocNullableType(o) => Ok(TSType::JSDocNullableType(o)),
             TSTupleElement::JSDocNonNullableType(o) => Ok(TSType::JSDocNonNullableType(o)),
             TSTupleElement::JSDocUnknownType(o) => Ok(TSType::JSDocUnknownType(o)),
+            TSTupleElement::TSDistributeType(o) => Ok(TSType::TSDistributeType(o)),
+            TSTupleElement::TSTypeReturn(o) => Ok(TSType::TSTypeReturn(o)),
             _ => Err(()),
         }
     }
@@ -5364,6 +5374,8 @@ impl<'a> From<TSType<'a>> for TSTupleElement<'a> {
             TSType::JSDocNullableType(o) => TSTupleElement::JSDocNullableType(o),
             TSType::JSDocNonNullableType(o) => TSTupleElement::JSDocNonNullableType(o),
             TSType::JSDocUnknownType(o) => TSTupleElement::JSDocUnknownType(o),
+            TSType::TSDistributeType(o) => TSTupleElement::TSDistributeType(o),
+            TSType::TSTypeReturn(o) => TSTupleElement::TSTypeReturn(o),
         }
     }
 }
@@ -5615,6 +5627,8 @@ macro_rules! match_declaration {
             | $ty::TSNamespaceDeclaration(_)
             | $ty::TSGlobalDeclaration(_)
             | $ty::TSImportEqualsDeclaration(_)
+            | $ty::TSProvideDeclaration(_)
+            | $ty::TSTypeFromDeclaration(_)
     };
 }
 pub use match_declaration;
@@ -5676,6 +5690,8 @@ macro_rules! match_ts_type {
             | $ty::JSDocNullableType(_)
             | $ty::JSDocNonNullableType(_)
             | $ty::JSDocUnknownType(_)
+            | $ty::TSDistributeType(_)
+            | $ty::TSTypeReturn(_)
     };
 }
 pub use match_ts_type;

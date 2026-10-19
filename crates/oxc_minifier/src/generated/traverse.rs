@@ -1694,6 +1694,56 @@ pub trait Traverse<'a> {
     fn exit_ts_type(&mut self, node: &mut TSType<'a>, ctx: &mut TraverseCtx<'a>) {}
 
     #[inline]
+    fn enter_ts_distribute_type(
+        &mut self,
+        node: &mut TSDistributeType<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+    #[inline]
+    fn exit_ts_distribute_type(
+        &mut self,
+        node: &mut TSDistributeType<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_ts_type_return(&mut self, node: &mut TSTypeReturn<'a>, ctx: &mut TraverseCtx<'a>) {}
+    #[inline]
+    fn exit_ts_type_return(&mut self, node: &mut TSTypeReturn<'a>, ctx: &mut TraverseCtx<'a>) {}
+
+    #[inline]
+    fn enter_ts_provide_declaration(
+        &mut self,
+        node: &mut TSProvideDeclaration<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+    #[inline]
+    fn exit_ts_provide_declaration(
+        &mut self,
+        node: &mut TSProvideDeclaration<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_ts_type_from_declaration(
+        &mut self,
+        node: &mut TSTypeFromDeclaration<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+    #[inline]
+    fn exit_ts_type_from_declaration(
+        &mut self,
+        node: &mut TSTypeFromDeclaration<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+
+    #[inline]
     fn enter_ts_conditional_type(
         &mut self,
         node: &mut TSConditionalType<'a>,

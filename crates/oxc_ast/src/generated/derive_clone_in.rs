@@ -1402,7 +1402,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for Statement<'_> {
             | Self::TSExternalModuleDeclaration(_)
             | Self::TSNamespaceDeclaration(_)
             | Self::TSGlobalDeclaration(_)
-            | Self::TSImportEqualsDeclaration(_) => Statement::from(CloneIn::clone_in_impl(
+            | Self::TSImportEqualsDeclaration(_)
+            | Self::TSProvideDeclaration(_)
+            | Self::TSTypeFromDeclaration(_) => Statement::from(CloneIn::clone_in_impl(
                 self.to_declaration(),
                 with_semantic_ids,
                 allocator,
@@ -1517,6 +1519,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for Declaration<'_> {
                 CloneIn::clone_in_impl(it, with_semantic_ids, allocator),
             ),
             Self::TSImportEqualsDeclaration(it) => Declaration::TSImportEqualsDeclaration(
+                CloneIn::clone_in_impl(it, with_semantic_ids, allocator),
+            ),
+            Self::TSProvideDeclaration(it) => Declaration::TSProvideDeclaration(
+                CloneIn::clone_in_impl(it, with_semantic_ids, allocator),
+            ),
+            Self::TSTypeFromDeclaration(it) => Declaration::TSTypeFromDeclaration(
                 CloneIn::clone_in_impl(it, with_semantic_ids, allocator),
             ),
         }
@@ -2214,6 +2222,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for FormalParameters<'_> {
             kind: CloneIn::clone_in_impl(&self.kind, with_semantic_ids, allocator),
             items: CloneIn::clone_in_impl(&self.items, with_semantic_ids, allocator),
             rest: CloneIn::clone_in_impl(&self.rest, with_semantic_ids, allocator),
+            function_type: CloneIn::clone_in_impl(
+                &self.function_type,
+                with_semantic_ids,
+                allocator,
+            ),
         }
     }
 }
@@ -2602,6 +2615,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyDefinition<'_> {
                 with_semantic_ids,
                 allocator,
             ),
+            permission: CloneIn::clone_in_impl(&self.permission, with_semantic_ids, allocator),
         }
     }
 }
@@ -2751,6 +2765,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for AccessorProperty<'_> {
                 with_semantic_ids,
                 allocator,
             ),
+            permission: CloneIn::clone_in_impl(&self.permission, with_semantic_ids, allocator),
         }
     }
 }
@@ -4096,6 +4111,93 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSType<'_> {
             Self::JSDocUnknownType(it) => {
                 TSType::JSDocUnknownType(CloneIn::clone_in_impl(it, with_semantic_ids, allocator))
             }
+            Self::TSDistributeType(it) => {
+                TSType::TSDistributeType(CloneIn::clone_in_impl(it, with_semantic_ids, allocator))
+            }
+            Self::TSTypeReturn(it) => {
+                TSType::TSTypeReturn(CloneIn::clone_in_impl(it, with_semantic_ids, allocator))
+            }
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for TSDistributeType<'_> {
+    type Cloned = TSDistributeType<'new_alloc>;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        TSDistributeType {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+            source: CloneIn::clone_in_impl(&self.source, with_semantic_ids, allocator),
+            member: CloneIn::clone_in_impl(&self.member, with_semantic_ids, allocator),
+            body: CloneIn::clone_in_impl(&self.body, with_semantic_ids, allocator),
+            scope_id: oxc_syntax::semantic_id::SemanticId::clone_cell_option_id(
+                &self.scope_id,
+                with_semantic_ids,
+            ),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeReturn<'_> {
+    type Cloned = TSTypeReturn<'new_alloc>;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        TSTypeReturn {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+            value_type: CloneIn::clone_in_impl(&self.value_type, with_semantic_ids, allocator),
+            type_annotation: CloneIn::clone_in_impl(
+                &self.type_annotation,
+                with_semantic_ids,
+                allocator,
+            ),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for TSProvideDeclaration<'_> {
+    type Cloned = TSProvideDeclaration<'new_alloc>;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        TSProvideDeclaration {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+            type_annotation: CloneIn::clone_in_impl(
+                &self.type_annotation,
+                with_semantic_ids,
+                allocator,
+            ),
+            type_alias: CloneIn::clone_in_impl(&self.type_alias, with_semantic_ids, allocator),
+            type_from: CloneIn::clone_in_impl(&self.type_from, with_semantic_ids, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for TSTypeFromDeclaration<'_> {
+    type Cloned = TSTypeFromDeclaration<'new_alloc>;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        TSTypeFromDeclaration {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+            id: CloneIn::clone_in_impl(&self.id, with_semantic_ids, allocator),
         }
     }
 }
@@ -4187,6 +4289,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeOperator<'_> {
             node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
             span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
             operator: CloneIn::clone_in_impl(&self.operator, with_semantic_ids, allocator),
+            lazy: CloneIn::clone_in_impl(&self.lazy, with_semantic_ids, allocator),
+            sign: CloneIn::clone_in_impl(&self.sign, with_semantic_ids, allocator),
             type_annotation: CloneIn::clone_in_impl(
                 &self.type_annotation,
                 with_semantic_ids,
@@ -4198,6 +4302,19 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeOperator<'_> {
 
 impl<'new_alloc> CloneIn<'new_alloc> for TSTypeOperatorOperator {
     type Cloned = TSTypeOperatorOperator;
+
+    #[inline(always)]
+    fn clone_in_impl(
+        &self,
+        _with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        *self
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for TSPermissionSign {
+    type Cloned = TSPermissionSign;
 
     #[inline(always)]
     fn clone_in_impl(
@@ -4276,6 +4393,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSNamedTupleMember<'_> {
             label: CloneIn::clone_in_impl(&self.label, with_semantic_ids, allocator),
             element_type: CloneIn::clone_in_impl(&self.element_type, with_semantic_ids, allocator),
             optional: CloneIn::clone_in_impl(&self.optional, with_semantic_ids, allocator),
+            permission: CloneIn::clone_in_impl(&self.permission, with_semantic_ids, allocator),
         }
     }
 }
@@ -4373,7 +4491,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTupleElement<'_> {
             | Self::TSParenthesizedType(_)
             | Self::JSDocNullableType(_)
             | Self::JSDocNonNullableType(_)
-            | Self::JSDocUnknownType(_) => TSTupleElement::from(CloneIn::clone_in_impl(
+            | Self::JSDocUnknownType(_)
+            | Self::TSDistributeType(_)
+            | Self::TSTypeReturn(_) => TSTupleElement::from(CloneIn::clone_in_impl(
                 self.to_ts_type(),
                 with_semantic_ids,
                 allocator,
@@ -4685,6 +4805,25 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeParameter<'_> {
             r#in: CloneIn::clone_in_impl(&self.r#in, with_semantic_ids, allocator),
             out: CloneIn::clone_in_impl(&self.out, with_semantic_ids, allocator),
             r#const: CloneIn::clone_in_impl(&self.r#const, with_semantic_ids, allocator),
+            owned: CloneIn::clone_in_impl(&self.owned, with_semantic_ids, allocator),
+            exact: CloneIn::clone_in_impl(&self.exact, with_semantic_ids, allocator),
+            exact_optional: CloneIn::clone_in_impl(
+                &self.exact_optional,
+                with_semantic_ids,
+                allocator,
+            ),
+            deep_permission: CloneIn::clone_in_impl(
+                &self.deep_permission,
+                with_semantic_ids,
+                allocator,
+            ),
+            deep_lazy: CloneIn::clone_in_impl(&self.deep_lazy, with_semantic_ids, allocator),
+            as_exact: CloneIn::clone_in_impl(&self.as_exact, with_semantic_ids, allocator),
+            as_exact_deep: CloneIn::clone_in_impl(
+                &self.as_exact_deep,
+                with_semantic_ids,
+                allocator,
+            ),
         }
     }
 }
@@ -4766,6 +4905,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSClassImplements<'_> {
                 with_semantic_ids,
                 allocator,
             ),
+            remove_exact: CloneIn::clone_in_impl(&self.remove_exact, with_semantic_ids, allocator),
         }
     }
 }
@@ -4834,6 +4974,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSPropertySignature<'_> {
                 with_semantic_ids,
                 allocator,
             ),
+            permission: CloneIn::clone_in_impl(&self.permission, with_semantic_ids, allocator),
         }
     }
 }
@@ -4893,6 +5034,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSIndexSignature<'_> {
             ),
             readonly: CloneIn::clone_in_impl(&self.readonly, with_semantic_ids, allocator),
             r#static: CloneIn::clone_in_impl(&self.r#static, with_semantic_ids, allocator),
+            permission: CloneIn::clone_in_impl(&self.permission, with_semantic_ids, allocator),
         }
     }
 }
@@ -5032,6 +5174,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSInterfaceHeritage<'_> {
                 with_semantic_ids,
                 allocator,
             ),
+            remove_exact: CloneIn::clone_in_impl(&self.remove_exact, with_semantic_ids, allocator),
         }
     }
 }
@@ -5058,6 +5201,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypePredicate<'_> {
                 with_semantic_ids,
                 allocator,
             ),
+            soft: CloneIn::clone_in_impl(&self.soft, with_semantic_ids, allocator),
         }
     }
 }
@@ -5417,6 +5561,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSMappedType<'_> {
             ),
             optional: CloneIn::clone_in_impl(&self.optional, with_semantic_ids, allocator),
             readonly: CloneIn::clone_in_impl(&self.readonly, with_semantic_ids, allocator),
+            permission: CloneIn::clone_in_impl(&self.permission, with_semantic_ids, allocator),
+            permission_sign: CloneIn::clone_in_impl(
+                &self.permission_sign,
+                with_semantic_ids,
+                allocator,
+            ),
             scope_id: oxc_syntax::semantic_id::SemanticId::clone_cell_option_id(
                 &self.scope_id,
                 with_semantic_ids,

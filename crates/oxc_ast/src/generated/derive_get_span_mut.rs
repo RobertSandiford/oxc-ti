@@ -622,6 +622,8 @@ impl GetSpanMut for Statement<'_> {
             Self::TSNamespaceDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSGlobalDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSImportEqualsDeclaration(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSProvideDeclaration(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSTypeFromDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ImportDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ExportAllDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::ExportDefaultDeclaration(it) => GetSpanMut::span_mut(&mut **it),
@@ -668,6 +670,8 @@ impl GetSpanMut for Declaration<'_> {
             Self::TSNamespaceDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSGlobalDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSImportEqualsDeclaration(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSProvideDeclaration(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSTypeFromDeclaration(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }
@@ -1668,7 +1672,37 @@ impl GetSpanMut for TSType<'_> {
             Self::JSDocNullableType(it) => GetSpanMut::span_mut(&mut **it),
             Self::JSDocNonNullableType(it) => GetSpanMut::span_mut(&mut **it),
             Self::JSDocUnknownType(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSDistributeType(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSTypeReturn(it) => GetSpanMut::span_mut(&mut **it),
         }
+    }
+}
+
+impl GetSpanMut for TSDistributeType<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
+    }
+}
+
+impl GetSpanMut for TSTypeReturn<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
+    }
+}
+
+impl GetSpanMut for TSProvideDeclaration<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
+    }
+}
+
+impl GetSpanMut for TSTypeFromDeclaration<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
     }
 }
 
@@ -1791,6 +1825,8 @@ impl GetSpanMut for TSTupleElement<'_> {
             Self::JSDocNullableType(it) => GetSpanMut::span_mut(&mut **it),
             Self::JSDocNonNullableType(it) => GetSpanMut::span_mut(&mut **it),
             Self::JSDocUnknownType(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSDistributeType(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSTypeReturn(it) => GetSpanMut::span_mut(&mut **it),
         }
     }
 }

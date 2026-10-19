@@ -319,6 +319,8 @@ impl GetAddress for Statement<'_> {
             Self::TSNamespaceDeclaration(it) => GetAddress::address(it),
             Self::TSGlobalDeclaration(it) => GetAddress::address(it),
             Self::TSImportEqualsDeclaration(it) => GetAddress::address(it),
+            Self::TSProvideDeclaration(it) => GetAddress::address(it),
+            Self::TSTypeFromDeclaration(it) => GetAddress::address(it),
             Self::ImportDeclaration(it) => GetAddress::address(it),
             Self::ExportAllDeclaration(it) => GetAddress::address(it),
             Self::ExportDefaultDeclaration(it) => GetAddress::address(it),
@@ -346,6 +348,8 @@ impl GetAddress for Declaration<'_> {
             Self::TSNamespaceDeclaration(it) => GetAddress::address(it),
             Self::TSGlobalDeclaration(it) => GetAddress::address(it),
             Self::TSImportEqualsDeclaration(it) => GetAddress::address(it),
+            Self::TSProvideDeclaration(it) => GetAddress::address(it),
+            Self::TSTypeFromDeclaration(it) => GetAddress::address(it),
         }
     }
 }
@@ -735,6 +739,8 @@ impl GetAddress for TSType<'_> {
             Self::JSDocNullableType(it) => GetAddress::address(it),
             Self::JSDocNonNullableType(it) => GetAddress::address(it),
             Self::JSDocUnknownType(it) => GetAddress::address(it),
+            Self::TSDistributeType(it) => GetAddress::address(it),
+            Self::TSTypeReturn(it) => GetAddress::address(it),
         }
     }
 }
@@ -783,6 +789,8 @@ impl GetAddress for TSTupleElement<'_> {
             Self::JSDocNullableType(it) => GetAddress::address(it),
             Self::JSDocNonNullableType(it) => GetAddress::address(it),
             Self::JSDocUnknownType(it) => GetAddress::address(it),
+            Self::TSDistributeType(it) => GetAddress::address(it),
+            Self::TSTypeReturn(it) => GetAddress::address(it),
         }
     }
 }

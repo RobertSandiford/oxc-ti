@@ -257,6 +257,48 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     fn parse_class_element_impl(&mut self) -> ClassElement<'a> {
+        let start = self.cur_start();
+
+        let decorators = self.parse_decorators();
+        let modifiers = self.parse_modifiers(
+            /* permit_const_as_modifier */ true,
+            /* stop_on_start_of_class_static_block */ true,
+        );
+        let (modifiers, permission) = self.parse_modifiers_and_permission(modifiers, |p| {
+            p.parse_modifiers(
+                /* permit_const_as_modifier */ true,
+                /* stop_on_start_of_class_static_block */ true,
+            )
+        });
+
+        let mut element = self.parse_class_element_after_modifiers(start, decorators, modifiers);
+        if let Some((permission, span)) = permission {
+            match &mut element {
+                ClassElement::PropertyDefinition(property) => {
+                    property.permission = Some(permission);
+                }
+                ClassElement::AccessorProperty(property) => {
+                    property.permission = Some(permission);
+                }
+                ClassElement::TSIndexSignature(signature) => {
+                    signature.permission = Some(permission);
+                }
+                _ => self.error(diagnostics::permission_modifier_not_on_property(span)),
+            }
+        }
+        element
+    }
+
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the body is upstream's, unchanged, which keeps merges simple"
+    )]
+    fn parse_class_element_after_modifiers(
+        &mut self,
+        start: u32,
+        decorators: ArenaVec<'a, Decorator<'a>>,
+        modifiers: Modifiers,
+    ) -> ClassElement<'a> {
         fn verify_class_element_modifiers<C: Config>(
             parser: &mut ParserImpl<'_, C>,
             modifiers: &Modifiers,
@@ -282,14 +324,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 );
             }
         }
-
-        let start = self.cur_start();
-
-        let decorators = self.parse_decorators();
-        let modifiers = self.parse_modifiers(
-            /* permit_const_as_modifier */ true,
-            /* stop_on_start_of_class_static_block */ true,
-        );
 
         // static { block }
         if self.at(Kind::Static) && self.lexer.peek_token().kind() == Kind::LCurly {

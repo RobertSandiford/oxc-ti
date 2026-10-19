@@ -433,7 +433,9 @@ export type Declaration =
   | TSEnumDeclaration
   | TSModuleDeclaration
   | TSGlobalDeclaration
-  | TSImportEqualsDeclaration;
+  | TSImportEqualsDeclaration
+  | TSProvideDeclaration
+  | TSTypeFromDeclaration;
 
 export interface VariableDeclaration extends Span {
   type: "VariableDeclaration";
@@ -1167,7 +1169,38 @@ export type TSType =
   | TSParenthesizedType
   | JSDocNullableType
   | JSDocNonNullableType
-  | JSDocUnknownType;
+  | JSDocUnknownType
+  | TSDistributeType
+  | TSTypeReturn;
+
+export interface TSDistributeType extends Span {
+  type: "TSDistributeType";
+  source: TSType;
+  member: TSTypeParameter | null;
+  body: TSType;
+  parent?: Node;
+}
+
+export interface TSTypeReturn extends Span {
+  type: "TSTypeReturn";
+  valueType: TSType | null;
+  typeAnnotation: TSType;
+  parent?: Node;
+}
+
+export interface TSProvideDeclaration extends Span {
+  type: "TSProvideDeclaration";
+  typeAnnotation: TSType | null;
+  typeAlias: TSTypeAliasDeclaration | null;
+  typeFrom: TSTypeFromDeclaration | null;
+  parent?: Node;
+}
+
+export interface TSTypeFromDeclaration extends Span {
+  type: "TSTypeFromDeclaration";
+  id: BindingIdentifier;
+  parent?: Node;
+}
 
 export interface TSConditionalType extends Span {
   type: "TSConditionalType";
@@ -1203,7 +1236,32 @@ export interface TSTypeOperator extends Span {
   parent?: Node;
 }
 
-export type TSTypeOperatorOperator = "keyof" | "unique" | "readonly";
+export type TSTypeOperatorOperator =
+  | "keyof"
+  | "unique"
+  | "readonly"
+  | "read"
+  | "write"
+  | "delete"
+  | "readWrite"
+  | "readDelete"
+  | "writeDelete"
+  | "readWriteDelete"
+  | "none"
+  | "all"
+  | "r"
+  | "w"
+  | "d"
+  | "rw"
+  | "rd"
+  | "wd"
+  | "rwd"
+  | "owned"
+  | "exact"
+  | "transient"
+  | "deep";
+
+export type TSPermissionSign = "plus" | "minus" | "equals";
 
 export interface TSArrayType extends Span {
   type: "TSArrayType";
@@ -1842,6 +1900,10 @@ export type Node =
   | TSEnumMember
   | TSTypeAnnotation
   | TSLiteralType
+  | TSDistributeType
+  | TSTypeReturn
+  | TSProvideDeclaration
+  | TSTypeFromDeclaration
   | TSConditionalType
   | TSUnionType
   | TSIntersectionType

@@ -1,5 +1,5 @@
 {
-  "name": "oxc",
+  "name": "oxc-ti",
   "private": true,
   "scripts": {
     "build": "pnpm --workspace-concurrency=1 --filter \"./napi/*\" --filter \"./apps/*\" --filter \"./packages/*\" build",

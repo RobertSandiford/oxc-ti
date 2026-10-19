@@ -40,6 +40,9 @@ impl<'a, 'b> FormatFunction<'a, 'b> {
 
     #[inline]
     pub fn format(&self, f: &mut JsFormatter<'_, 'a>) {
+        // TightScript: `function f: F (a) {}`; `declare function f: F;` has no parameter list.
+        let function_type = self.params().function_type();
+        let has_param_list = function_type.is_none() || !self.params.span.is_empty();
         let head = format_with(|f| {
             write!(
                 f,
@@ -50,11 +53,38 @@ impl<'a, 'b> FormatFunction<'a, 'b> {
                     self.generator().then_some("*"),
                     space(),
                     self.id(),
-                    group(&self.type_parameters()),
                 ]
             );
+            if let Some(function_type) = &function_type {
+                // Own type parameters need the type parenthesized, or `F <T>` reads as `F<T>`.
+                // A function type is parenthesized too, so its return type doesn't run into the parameters.
+                if self.type_parameters.is_some()
+                    || matches!(
+                        function_type.type_annotation,
+                        TSType::TSFunctionType(_) | TSType::TSConstructorType(_)
+                    )
+                {
+                    write!(f, [":", space(), "(", function_type.type_annotation(), ")"]);
+                } else {
+                    write!(f, [function_type]);
+                }
+                if has_param_list || self.type_parameters.is_some() {
+                    write!(f, [space()]);
+                }
+            }
+            write!(f, [group(&self.type_parameters())]);
         });
         FormatContentWithCacheMode::new(self.span, head, self.cache_mode).fmt(f);
+        if !has_param_list {
+            write!(f, [self.return_type()]);
+            if let Some(body) = self.body() {
+                write!(f, [space(), body]);
+            }
+            if self.is_ts_declare_function() {
+                write!(f, [OptionalSemicolon]);
+            }
+            return;
+        }
 
         let format_parameters =
             FormatContentWithCacheMode::new(self.params.span, self.params(), self.cache_mode)

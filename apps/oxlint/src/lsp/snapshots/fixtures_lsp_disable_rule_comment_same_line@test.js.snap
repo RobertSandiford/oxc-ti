@@ -1,0 +1,189 @@
+---
+source: apps/oxlint/src/lsp/tester.rs
+---
+########## 
+Linted file: fixtures/lsp/disable_rule_comment_same_line/test.js
+----------
+########## Diagnostic Reports
+File URI: file://<variable>/fixtures/lsp/disable_rule_comment_same_line/test.js
+
+code: "eslint(no-unused-vars)"
+code_description.href: "https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-unused-vars.html"
+message: String("Function 'run' is declared but never used.\nhelp: Consider removing this declaration.")
+range: Range { start: Position { line: 0, character: 9 }, end: Position { line: 0, character: 12 } }
+related_information[0].message: "'run' is declared here"
+related_information[0].location.uri: "file://<variable>/fixtures/lsp/disable_rule_comment_same_line/test.js"
+related_information[0].location.range: Range { start: Position { line: 0, character: 9 }, end: Position { line: 0, character: 12 } }
+severity: Some(Warning)
+source: Some("oxc")
+tags: None
+
+code: "eslint(no-debugger)"
+code_description.href: "https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-debugger.html"
+message: String("`debugger` statement is not allowed\nhelp: Remove the debugger statement")
+range: Range { start: Position { line: 1, character: 2 }, end: Position { line: 1, character: 11 } }
+related_information[0].message: ""
+related_information[0].location.uri: "file://<variable>/fixtures/lsp/disable_rule_comment_same_line/test.js"
+related_information[0].location.range: Range { start: Position { line: 1, character: 2 }, end: Position { line: 1, character: 11 } }
+severity: Some(Error)
+source: Some("oxc")
+tags: None
+
+code: "eslint(no-console)"
+code_description.href: "https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-console.html"
+message: String("Unexpected console statement.\nhelp: Delete this console statement.")
+range: Range { start: Position { line: 2, character: 2 }, end: Position { line: 2, character: 13 } }
+related_information[0].message: ""
+related_information[0].location.uri: "file://<variable>/fixtures/lsp/disable_rule_comment_same_line/test.js"
+related_information[0].location.range: Range { start: Position { line: 2, character: 2 }, end: Position { line: 2, character: 13 } }
+severity: Some(Error)
+source: Some("oxc")
+tags: None
+
+########### Code Actions/Commands
+CodeAction: 
+Title: Disable no-unused-vars for this line
+Is Preferred: Some(false)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 0,
+            character: 16,
+        },
+        end: Position {
+            line: 0,
+            character: 16,
+        },
+    },
+    new_text: " // oxlint-disable-line no-unused-vars",
+}
+
+
+CodeAction: 
+Title: Disable no-unused-vars for this whole file
+Is Preferred: Some(false)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 0,
+            character: 0,
+        },
+        end: Position {
+            line: 0,
+            character: 0,
+        },
+    },
+    new_text: "// oxlint-disable no-unused-vars\n",
+}
+
+
+CodeAction: 
+Title: Remove the debugger statement
+Is Preferred: Some(true)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 1,
+            character: 2,
+        },
+        end: Position {
+            line: 1,
+            character: 11,
+        },
+    },
+    new_text: "",
+}
+
+
+CodeAction: 
+Title: Disable no-debugger for this line
+Is Preferred: Some(false)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 1,
+            character: 11,
+        },
+        end: Position {
+            line: 1,
+            character: 11,
+        },
+    },
+    new_text: " // oxlint-disable-line no-debugger",
+}
+
+
+CodeAction: 
+Title: Disable no-debugger for this whole file
+Is Preferred: Some(false)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 0,
+            character: 0,
+        },
+        end: Position {
+            line: 0,
+            character: 0,
+        },
+    },
+    new_text: "// oxlint-disable no-debugger\n",
+}
+
+
+CodeAction: 
+Title: Delete this code.
+Is Preferred: Some(true)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 2,
+            character: 2,
+        },
+        end: Position {
+            line: 2,
+            character: 24,
+        },
+    },
+    new_text: "",
+}
+
+
+CodeAction: 
+Title: Disable no-console for this line
+Is Preferred: Some(false)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 2,
+            character: 56,
+        },
+        end: Position {
+            line: 2,
+            character: 56,
+        },
+    },
+    new_text: " no-console",
+}
+
+
+CodeAction: 
+Title: Disable no-console for this whole file
+Is Preferred: Some(false)
+TextEdit: TextEdit {
+    range: Range {
+        start: Position {
+            line: 0,
+            character: 0,
+        },
+        end: Position {
+            line: 0,
+            character: 0,
+        },
+    },
+    new_text: "// oxlint-disable no-console\n",
+}
+
+
+########### Fix All Action
+None

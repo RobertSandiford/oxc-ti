@@ -135,7 +135,7 @@ impl<'a> IsolatedDeclarations<'a> {
             }
         }
 
-        ClassElement::new_property_definition(
+        let mut element = ClassElement::new_property_definition(
             property.span,
             property.r#type,
             [],
@@ -151,7 +151,11 @@ impl<'a> IsolatedDeclarations<'a> {
             property.readonly,
             Self::transform_accessibility(property.accessibility),
             self,
-        )
+        );
+        if let ClassElement::PropertyDefinition(definition) = &mut element {
+            definition.permission = property.permission;
+        }
+        element
     }
 
     fn get_literal_initializer_without_const_assertion(
@@ -691,7 +695,7 @@ impl<'a> IsolatedDeclarations<'a> {
                     };
 
                     // FIXME: missing many fields
-                    let new_element = ClassElement::new_accessor_property(
+                    let mut new_element = ClassElement::new_accessor_property(
                         property.span,
                         property.r#type,
                         [],
@@ -705,6 +709,9 @@ impl<'a> IsolatedDeclarations<'a> {
                         Self::transform_accessibility(property.accessibility),
                         self,
                     );
+                    if let ClassElement::AccessorProperty(accessor) = &mut new_element {
+                        accessor.permission = property.permission;
+                    }
                     elements.push(new_element);
                 }
                 ClassElement::TSIndexSignature(signature) => elements.push({

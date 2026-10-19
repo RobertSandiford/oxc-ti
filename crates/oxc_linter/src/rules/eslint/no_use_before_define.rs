@@ -258,6 +258,7 @@ fn is_typedef(symbol_id: SymbolId, ctx: &LintContext<'_>) -> bool {
     matches!(
         ctx.symbol_declaration(symbol_id).kind(),
         AstKind::TSTypeAliasDeclaration(_)
+            | AstKind::TSTypeFromDeclaration(_)
             | AstKind::TSInterfaceDeclaration(_)
             | AstKind::TSTypeParameter(_)
     )

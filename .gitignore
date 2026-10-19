@@ -2,6 +2,10 @@
 target/
 **/*.rs.bk
 
+# Pending insta snapshots
+*.snap.new
+*.pending-snap
+
 # Wasm
 **/*.wasm
 

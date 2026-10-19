@@ -163,6 +163,11 @@ fn generate(codegen: &Codegen) -> Codes {
         ("TSJSDocNonNullableType", &["typeAnnotation"]),
         ("TSJSDocNullableType", &["typeAnnotation"]),
         ("TSJSDocUnknownType", &[]),
+        // TightScript
+        ("TSDistributeType", &["source", "member", "body"]),
+        ("TSTypeReturn", &["valueType", "typeAnnotation"]),
+        ("TSProvideDeclaration", &["typeAnnotation", "typeAlias", "typeFrom"]),
+        ("TSTypeFromDeclaration", &["id"]),
     ];
     nodes.extend(extra.iter().map(|&(name, keys)| NodeKeys {
         name: name.to_string(),

@@ -1,0 +1,13 @@
+{
+  "name": "tightscript-node",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Runs TypeScript and TightScript in Node by blanking types with oxc",
+  "type": "module",
+  "exports": {
+    "./register": "./register.mjs"
+  },
+  "engines": {
+    "node": ">=22.15.0"
+  }
+}

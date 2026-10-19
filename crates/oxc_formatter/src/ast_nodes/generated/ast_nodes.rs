@@ -151,6 +151,10 @@ pub enum AstNodes<'a> {
     TSEnumMember(&'a AstNode<'a, TSEnumMember<'a>>),
     TSTypeAnnotation(&'a AstNode<'a, TSTypeAnnotation<'a>>),
     TSLiteralType(&'a AstNode<'a, TSLiteralType<'a>>),
+    TSDistributeType(&'a AstNode<'a, TSDistributeType<'a>>),
+    TSTypeReturn(&'a AstNode<'a, TSTypeReturn<'a>>),
+    TSProvideDeclaration(&'a AstNode<'a, TSProvideDeclaration<'a>>),
+    TSTypeFromDeclaration(&'a AstNode<'a, TSTypeFromDeclaration<'a>>),
     TSConditionalType(&'a AstNode<'a, TSConditionalType<'a>>),
     TSUnionType(&'a AstNode<'a, TSUnionType<'a>>),
     TSIntersectionType(&'a AstNode<'a, TSIntersectionType<'a>>),
@@ -354,6 +358,10 @@ impl AstNodes<'_> {
             Self::TSEnumMember(n) => n.span(),
             Self::TSTypeAnnotation(n) => n.span(),
             Self::TSLiteralType(n) => n.span(),
+            Self::TSDistributeType(n) => n.span(),
+            Self::TSTypeReturn(n) => n.span(),
+            Self::TSProvideDeclaration(n) => n.span(),
+            Self::TSTypeFromDeclaration(n) => n.span(),
             Self::TSConditionalType(n) => n.span(),
             Self::TSUnionType(n) => n.span(),
             Self::TSIntersectionType(n) => n.span(),
@@ -557,6 +565,10 @@ impl AstNodes<'_> {
             Self::TSEnumMember(n) => n.parent(),
             Self::TSTypeAnnotation(n) => n.parent(),
             Self::TSLiteralType(n) => n.parent(),
+            Self::TSDistributeType(n) => n.parent(),
+            Self::TSTypeReturn(n) => n.parent(),
+            Self::TSProvideDeclaration(n) => n.parent(),
+            Self::TSTypeFromDeclaration(n) => n.parent(),
             Self::TSConditionalType(n) => n.parent(),
             Self::TSUnionType(n) => n.parent(),
             Self::TSIntersectionType(n) => n.parent(),
@@ -755,6 +767,10 @@ impl AstNodes<'_> {
             Self::TSEnumMember(_) => "TSEnumMember",
             Self::TSTypeAnnotation(_) => "TSTypeAnnotation",
             Self::TSLiteralType(_) => "TSLiteralType",
+            Self::TSDistributeType(_) => "TSDistributeType",
+            Self::TSTypeReturn(_) => "TSTypeReturn",
+            Self::TSProvideDeclaration(_) => "TSProvideDeclaration",
+            Self::TSTypeFromDeclaration(_) => "TSTypeFromDeclaration",
             Self::TSConditionalType(_) => "TSConditionalType",
             Self::TSUnionType(_) => "TSUnionType",
             Self::TSIntersectionType(_) => "TSIntersectionType",
@@ -3273,6 +3289,22 @@ impl<'a> AstNode<'a, Declaration<'a>> {
                     following_span_start: self.following_span_start,
                 }))
             }
+            Declaration::TSProvideDeclaration(s) => {
+                AstNodes::TSProvideDeclaration(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
+            Declaration::TSTypeFromDeclaration(s) => {
+                AstNodes::TSTypeFromDeclaration(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
         };
         self.allocator.alloc(node)
     }
@@ -4627,7 +4659,13 @@ impl<'a> AstNode<'a, FormalParameters<'a>> {
 
     #[inline]
     pub fn items(&self) -> &AstNode<'a, ArenaVec<'a, FormalParameter<'a>>> {
-        let following_span_start = self.inner.rest.as_deref().map_or(0, |n| n.span().start);
+        let following_span_start = self
+            .inner
+            .rest
+            .as_deref()
+            .map(|n| n.span().start)
+            .or_else(|| self.inner.function_type.as_deref().map(|n| n.span().start))
+            .unwrap_or(0);
         self.allocator.alloc(AstNode {
             inner: &self.inner.items,
             allocator: self.allocator,
@@ -4638,9 +4676,23 @@ impl<'a> AstNode<'a, FormalParameters<'a>> {
 
     #[inline]
     pub fn rest(&self) -> Option<&AstNode<'a, FormalParameterRest<'a>>> {
-        let following_span_start = 0;
+        let following_span_start =
+            self.inner.function_type.as_deref().map_or(0, |n| n.span().start);
         self.allocator
             .alloc(self.inner.rest.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: AstNodes::FormalParameters(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn function_type(&self) -> Option<&AstNode<'a, TSTypeAnnotation<'a>>> {
+        let following_span_start = 0;
+        self.allocator
+            .alloc(self.inner.function_type.as_ref().map(|inner| AstNode {
                 inner: inner.as_ref(),
                 allocator: self.allocator,
                 parent: AstNodes::FormalParameters(transmute_self(self)),
@@ -5450,6 +5502,11 @@ impl<'a> AstNode<'a, PropertyDefinition<'a>> {
         self.inner.accessibility
     }
 
+    #[inline]
+    pub fn permission(&self) -> Option<TSTypeOperatorOperator> {
+        self.inner.permission
+    }
+
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
         format_leading_comments(self.span()).fmt(f);
     }
@@ -5677,6 +5734,11 @@ impl<'a> AstNode<'a, AccessorProperty<'a>> {
     #[inline]
     pub fn accessibility(&self) -> Option<TSAccessibility> {
         self.inner.accessibility
+    }
+
+    #[inline]
+    pub fn permission(&self) -> Option<TSTypeOperatorOperator> {
+        self.inner.permission
     }
 
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
@@ -7876,8 +7938,207 @@ impl<'a> AstNode<'a, TSType<'a>> {
                     following_span_start: self.following_span_start,
                 }))
             }
+            TSType::TSDistributeType(s) => {
+                AstNodes::TSDistributeType(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
+            TSType::TSTypeReturn(s) => AstNodes::TSTypeReturn(self.allocator.alloc(AstNode {
+                inner: s.as_ref(),
+                parent,
+                allocator: self.allocator,
+                following_span_start: self.following_span_start,
+            })),
         };
         self.allocator.alloc(node)
+    }
+}
+
+impl<'a> AstNode<'a, TSDistributeType<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
+    pub fn source(&self) -> &AstNode<'a, TSType<'a>> {
+        let following_span_start = self
+            .inner
+            .member
+            .as_deref()
+            .map(|n| n.span().start)
+            .or_else(|| Some(self.inner.body.span().start))
+            .unwrap_or(0);
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.source,
+            allocator: self.allocator,
+            parent: AstNodes::TSDistributeType(transmute_self(self)),
+            following_span_start,
+        })
+    }
+
+    #[inline]
+    pub fn member(&self) -> Option<&AstNode<'a, TSTypeParameter<'a>>> {
+        let following_span_start = self.inner.body.span().start;
+        self.allocator
+            .alloc(self.inner.member.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: AstNodes::TSDistributeType(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn body(&self) -> &AstNode<'a, TSType<'a>> {
+        let following_span_start = self.following_span_start;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.body,
+            allocator: self.allocator,
+            parent: AstNodes::TSDistributeType(transmute_self(self)),
+            following_span_start,
+        })
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, TSTypeReturn<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
+    pub fn value_type(&self) -> Option<&AstNode<'a, TSType<'a>>> {
+        let following_span_start = self.inner.type_annotation.span().start;
+        self.allocator
+            .alloc(self.inner.value_type.as_ref().map(|inner| AstNode {
+                inner,
+                allocator: self.allocator,
+                parent: AstNodes::TSTypeReturn(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn type_annotation(&self) -> &AstNode<'a, TSType<'a>> {
+        let following_span_start = self.following_span_start;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.type_annotation,
+            allocator: self.allocator,
+            parent: AstNodes::TSTypeReturn(transmute_self(self)),
+            following_span_start,
+        })
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, TSProvideDeclaration<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
+    pub fn type_annotation(&self) -> Option<&AstNode<'a, TSType<'a>>> {
+        let following_span_start = self
+            .inner
+            .type_alias
+            .as_deref()
+            .map(|n| n.span().start)
+            .or_else(|| self.inner.type_from.as_deref().map(|n| n.span().start))
+            .unwrap_or(0);
+        self.allocator
+            .alloc(self.inner.type_annotation.as_ref().map(|inner| AstNode {
+                inner,
+                allocator: self.allocator,
+                parent: AstNodes::TSProvideDeclaration(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn type_alias(&self) -> Option<&AstNode<'a, TSTypeAliasDeclaration<'a>>> {
+        let following_span_start = self.inner.type_from.as_deref().map_or(0, |n| n.span().start);
+        self.allocator
+            .alloc(self.inner.type_alias.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: AstNodes::TSProvideDeclaration(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    #[inline]
+    pub fn type_from(&self) -> Option<&AstNode<'a, TSTypeFromDeclaration<'a>>> {
+        let following_span_start = 0;
+        self.allocator
+            .alloc(self.inner.type_from.as_ref().map(|inner| AstNode {
+                inner: inner.as_ref(),
+                allocator: self.allocator,
+                parent: AstNodes::TSProvideDeclaration(transmute_self(self)),
+                following_span_start,
+            }))
+            .as_ref()
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, TSTypeFromDeclaration<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
+    pub fn id(&self) -> &AstNode<'a, BindingIdentifier<'a>> {
+        let following_span_start = 0;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.id,
+            allocator: self.allocator,
+            parent: AstNodes::TSTypeFromDeclaration(transmute_self(self)),
+            following_span_start,
+        })
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
     }
 }
 
@@ -8034,6 +8295,16 @@ impl<'a> AstNode<'a, TSTypeOperator<'a>> {
     }
 
     #[inline]
+    pub fn lazy(&self) -> bool {
+        self.inner.lazy
+    }
+
+    #[inline]
+    pub fn sign(&self) -> Option<TSPermissionSign> {
+        self.inner.sign
+    }
+
+    #[inline]
     pub fn type_annotation(&self) -> &AstNode<'a, TSType<'a>> {
         let following_span_start = self.following_span_start;
         self.allocator.alloc(AstNode {
@@ -8177,6 +8448,11 @@ impl<'a> AstNode<'a, TSNamedTupleMember<'a>> {
     #[inline]
     pub fn optional(&self) -> bool {
         self.inner.optional
+    }
+
+    #[inline]
+    pub fn permission(&self) -> Option<TSTypeOperatorOperator> {
+        self.inner.permission
     }
 
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
@@ -8718,6 +8994,41 @@ impl<'a> AstNode<'a, TSTypeParameter<'a>> {
         self.inner.r#const
     }
 
+    #[inline]
+    pub fn owned(&self) -> bool {
+        self.inner.owned
+    }
+
+    #[inline]
+    pub fn exact(&self) -> bool {
+        self.inner.exact
+    }
+
+    #[inline]
+    pub fn exact_optional(&self) -> bool {
+        self.inner.exact_optional
+    }
+
+    #[inline]
+    pub fn deep_permission(&self) -> Option<TSTypeOperatorOperator> {
+        self.inner.deep_permission
+    }
+
+    #[inline]
+    pub fn deep_lazy(&self) -> bool {
+        self.inner.deep_lazy
+    }
+
+    #[inline]
+    pub fn as_exact(&self) -> bool {
+        self.inner.as_exact
+    }
+
+    #[inline]
+    pub fn as_exact_deep(&self) -> bool {
+        self.inner.as_exact_deep
+    }
+
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
         format_leading_comments(self.span()).fmt(f);
     }
@@ -8851,6 +9162,11 @@ impl<'a> AstNode<'a, TSClassImplements<'a>> {
                 following_span_start,
             }))
             .as_ref()
+    }
+
+    #[inline]
+    pub fn remove_exact(&self) -> bool {
+        self.inner.remove_exact
     }
 
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
@@ -9021,6 +9337,11 @@ impl<'a> AstNode<'a, TSPropertySignature<'a>> {
             .as_ref()
     }
 
+    #[inline]
+    pub fn permission(&self) -> Option<TSTypeOperatorOperator> {
+        self.inner.permission
+    }
+
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
         format_leading_comments(self.span()).fmt(f);
     }
@@ -9117,6 +9438,11 @@ impl<'a> AstNode<'a, TSIndexSignature<'a>> {
     #[inline]
     pub fn r#static(&self) -> bool {
         self.inner.r#static
+    }
+
+    #[inline]
+    pub fn permission(&self) -> Option<TSTypeOperatorOperator> {
+        self.inner.permission
     }
 
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
@@ -9445,6 +9771,11 @@ impl<'a> AstNode<'a, TSInterfaceHeritage<'a>> {
             .as_ref()
     }
 
+    #[inline]
+    pub fn remove_exact(&self) -> bool {
+        self.inner.remove_exact
+    }
+
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
         format_leading_comments(self.span()).fmt(f);
     }
@@ -9494,6 +9825,11 @@ impl<'a> AstNode<'a, TSTypePredicate<'a>> {
                 following_span_start,
             }))
             .as_ref()
+    }
+
+    #[inline]
+    pub fn soft(&self) -> bool {
+        self.inner.soft
     }
 
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
@@ -10211,6 +10547,16 @@ impl<'a> AstNode<'a, TSMappedType<'a>> {
     #[inline]
     pub fn readonly(&self) -> Option<TSMappedTypeModifierOperator> {
         self.inner.readonly
+    }
+
+    #[inline]
+    pub fn permission(&self) -> Option<TSTypeOperatorOperator> {
+        self.inner.permission
+    }
+
+    #[inline]
+    pub fn permission_sign(&self) -> Option<TSPermissionSign> {
+        self.inner.permission_sign
     }
 
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {

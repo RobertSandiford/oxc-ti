@@ -198,6 +198,9 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSIndexSignature<'a>> {
         if self.readonly {
             write!(f, ["readonly", space()]);
         }
+        if let Some(permission) = self.permission {
+            write!(f, [permission.to_str(), space()]);
+        }
         let is_class = matches!(self.parent(), AstNodes::ClassBody(_));
         write!(
             f,
@@ -239,6 +242,9 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArenaVec<'a, TSClassImp
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSClassImplements<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if self.remove_exact {
+            write!(f, ["-exact", space()]);
+        }
         write!(f, [self.expression(), self.type_arguments()]);
     }
 }

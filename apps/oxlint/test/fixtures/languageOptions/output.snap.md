@@ -150,6 +150,7 @@
   |   "TSConstructSignatureDeclaration": "TSConstructSignatureDeclaration",
   |   "TSConstructorType": "TSConstructorType",
   |   "TSDeclareFunction": "TSDeclareFunction",
+  |   "TSDistributeType": "TSDistributeType",
   |   "TSEmptyBodyFunctionExpression": "TSEmptyBodyFunctionExpression",
   |   "TSEnumBody": "TSEnumBody",
   |   "TSEnumDeclaration": "TSEnumDeclaration",
@@ -181,6 +182,7 @@
   |   "TSParameterProperty": "TSParameterProperty",
   |   "TSParenthesizedType": "TSParenthesizedType",
   |   "TSPropertySignature": "TSPropertySignature",
+  |   "TSProvideDeclaration": "TSProvideDeclaration",
   |   "TSQualifiedName": "TSQualifiedName",
   |   "TSRestType": "TSRestType",
   |   "TSSatisfiesExpression": "TSSatisfiesExpression",
@@ -189,6 +191,7 @@
   |   "TSTypeAliasDeclaration": "TSTypeAliasDeclaration",
   |   "TSTypeAnnotation": "TSTypeAnnotation",
   |   "TSTypeAssertion": "TSTypeAssertion",
+  |   "TSTypeFromDeclaration": "TSTypeFromDeclaration",
   |   "TSTypeLiteral": "TSTypeLiteral",
   |   "TSTypeOperator": "TSTypeOperator",
   |   "TSTypeParameter": "TSTypeParameter",
@@ -197,6 +200,7 @@
   |   "TSTypePredicate": "TSTypePredicate",
   |   "TSTypeQuery": "TSTypeQuery",
   |   "TSTypeReference": "TSTypeReference",
+  |   "TSTypeReturn": "TSTypeReturn",
   |   "TSUnionType": "TSUnionType"
   | }
   | VisitorKeys: {
@@ -613,6 +617,11 @@
   |     "returnType",
   |     "body"
   |   ],
+  |   "TSDistributeType": [
+  |     "source",
+  |     "member",
+  |     "body"
+  |   ],
   |   "TSEmptyBodyFunctionExpression": [
   |     "id",
   |     "typeParameters",
@@ -734,6 +743,11 @@
   |     "key",
   |     "typeAnnotation"
   |   ],
+  |   "TSProvideDeclaration": [
+  |     "typeAnnotation",
+  |     "typeAlias",
+  |     "typeFrom"
+  |   ],
   |   "TSQualifiedName": [
   |     "left",
   |     "right"
@@ -764,6 +778,9 @@
   |     "typeAnnotation",
   |     "expression"
   |   ],
+  |   "TSTypeFromDeclaration": [
+  |     "id"
+  |   ],
   |   "TSTypeLiteral": [
   |     "members"
   |   ],
@@ -792,6 +809,10 @@
   |   "TSTypeReference": [
   |     "typeName",
   |     "typeArguments"
+  |   ],
+  |   "TSTypeReturn": [
+  |     "valueType",
+  |     "typeAnnotation"
   |   ],
   |   "TSUnionType": [
   |     "types"

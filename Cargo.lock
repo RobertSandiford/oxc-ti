@@ -2721,6 +2721,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxc_ti_compile"
+version = "0.154.0"
+dependencies = [
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_codegen",
+ "oxc_diagnostics",
+ "oxc_parser",
+ "oxc_semantic",
+ "oxc_sourcemap",
+ "oxc_span",
+ "oxc_transformer",
+ "oxc_traverse",
+]
+
+[[package]]
 name = "oxc_track_linter_timings"
 version = "0.0.0"
 dependencies = [
@@ -2772,7 +2789,10 @@ dependencies = [
  "oxc",
  "oxc_napi",
  "oxc_sourcemap",
+ "oxc_ti_compile",
+ "oxc_ts_blank",
  "rustc-hash",
+ "tungsten_passes",
 ]
 
 [[package]]
@@ -2876,6 +2896,22 @@ dependencies = [
  "oxc_span",
  "oxc_str",
  "oxc_syntax",
+ "rustc-hash",
+]
+
+[[package]]
+name = "oxc_ts_blank"
+version = "0.154.0"
+dependencies = [
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_codegen",
+ "oxc_diagnostics",
+ "oxc_parser",
+ "oxc_semantic",
+ "oxc_span",
+ "oxc_transformer",
  "rustc-hash",
 ]
 
@@ -4050,6 +4086,28 @@ dependencies = [
  "thread_local",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "tungsten_passes"
+version = "0.154.0"
+dependencies = [
+ "dragonbox_ecma",
+ "indexmap",
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_codegen",
+ "oxc_diagnostics",
+ "oxc_semantic",
+ "oxc_span",
+ "oxc_str",
+ "oxc_ti_compile",
+ "oxc_traverse",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

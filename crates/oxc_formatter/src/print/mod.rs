@@ -1410,6 +1410,12 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSParenthesizedType<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeOperator<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if self.lazy() {
+            write!(f, ["lazy", space()]);
+        }
+        if let Some(sign) = self.sign() {
+            write!(f, [sign.to_str()]);
+        }
         write!(f, [self.operator().to_str(), space(), self.type_annotation()]);
     }
 }
@@ -1428,6 +1434,12 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSIndexedAccessType<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSNamedTupleMember<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        // Inside a rest element the permission is printed before the `...`.
+        if let Some(permission) = self.permission()
+            && !matches!(self.parent(), AstNodes::TSRestType(_))
+        {
+            write!(f, [permission.to_str(), space()]);
+        }
         write!(f, self.label());
         if self.optional() {
             write!(f, "?");
@@ -1444,6 +1456,11 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSOptionalType<'a>> {
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSRestType<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if let TSType::TSNamedTupleMember(member) = &self.type_annotation
+            && let Some(permission) = member.permission
+        {
+            write!(f, [permission.to_str(), space()]);
+        }
         write!(f, ["...", self.type_annotation()]);
     }
 }
@@ -1735,6 +1752,9 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSPropertySignature<'a>> {
         if self.readonly() {
             write!(f, ["readonly", space()]);
         }
+        if let Some(permission) = self.permission() {
+            write!(f, [permission.to_str(), space()]);
+        }
         format_property_key(self.key(), self.computed(), f);
         if self.optional() {
             write!(f, "?");
@@ -1854,6 +1874,9 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArenaVec<'a, TSInterfac
 
 impl<'a> FormatWrite<'a> for AstNode<'a, TSInterfaceHeritage<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if self.remove_exact {
+            write!(f, ["-exact", space()]);
+        }
         write!(f, [self.type_name(), self.type_arguments()]);
     }
 }
@@ -1865,7 +1888,7 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSTypePredicate<'a>> {
         }
         write!(f, [self.parameter_name()]);
         if let Some(type_annotation) = self.type_annotation() {
-            write!(f, [space(), "is", space(), type_annotation]);
+            write!(f, [space(), if self.soft { "is?" } else { "is" }, space(), type_annotation]);
         }
     }
 }
@@ -1959,6 +1982,48 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeLiteral<'a>> {
 impl<'a> FormatWrite<'a> for AstNode<'a, TSInferType<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         write!(f, ["infer ", self.type_parameter()]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, TSDistributeType<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, ["distribute", space(), self.source()]);
+        if let Some(member) = self.member() {
+            write!(f, [space(), member]);
+        }
+        write!(f, [space(), "as", space(), self.body()]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeReturn<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        if let Some(value_type) = self.value_type() {
+            write!(f, [value_type, space(), "and", space()]);
+        }
+        write!(f, ["type", space(), self.type_annotation()]);
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, TSProvideDeclaration<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, "provide");
+        if let Some(type_alias) = self.type_alias() {
+            write!(f, [space(), type_alias]);
+        } else if let Some(type_from) = self.type_from() {
+            write!(f, [space(), type_from]);
+        } else if let Some(type_annotation) = self.type_annotation() {
+            write!(f, [space(), type_annotation, OptionalSemicolon]);
+        } else {
+            // `provide from` names the statement after it, so it takes no `;`.
+            write!(f, [space(), "from"]);
+        }
+    }
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeFromDeclaration<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        // Names the statement after it, so it takes no `;`.
+        write!(f, ["type", space(), self.id(), space(), "from"]);
     }
 }
 

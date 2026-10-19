@@ -2823,6 +2823,26 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, Declaration<'a>> {
                     })
                     .fmt(f);
             }
+            Declaration::TSProvideDeclaration(inner) => {
+                allocator
+                    .alloc(AstNode::<TSProvideDeclaration> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            Declaration::TSTypeFromDeclaration(inner) => {
+                allocator
+                    .alloc(AstNode::<TSTypeFromDeclaration> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
         }
     }
 }
@@ -6136,7 +6156,173 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSType<'a>> {
                     })
                     .fmt(f);
             }
+            TSType::TSDistributeType(inner) => {
+                allocator
+                    .alloc(AstNode::<TSDistributeType> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            TSType::TSTypeReturn(inner) => {
+                allocator
+                    .alloc(AstNode::<TSTypeReturn> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
         }
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSDistributeType<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        if f.comments().is_quiet(
+            self.span(),
+            || self.parent.span(),
+            self.following_span_start,
+            true,
+        ) {
+            debug_assert!(
+                matches!(classify_type_cast(self.span(), f), TypeCast::None),
+                "a quiet node is in a type cast"
+            );
+            let needs_parentheses = self.needs_parentheses(f);
+            if needs_parentheses {
+                "(".fmt(f);
+            }
+            self.write(f);
+            if needs_parentheses {
+                ")".fmt(f);
+            }
+            return;
+        }
+        let is_suppressed = f.comments().is_span_suppressed(self.span());
+        if is_suppressed {
+            write_suppressed_expression(
+                self.span(),
+                self.leading_comments_start(),
+                self.needs_parentheses(f),
+                f,
+            );
+            self.format_trailing_comments(f);
+            return;
+        }
+        if format_type_cast_comment_node(self, false, f) {
+            return;
+        }
+        let needs_parentheses = self.needs_parentheses(f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
+        self.write(f);
+        if needs_parentheses {
+            ")".fmt(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSTypeReturn<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        if f.comments().is_quiet(
+            self.span(),
+            || self.parent.span(),
+            self.following_span_start,
+            true,
+        ) {
+            debug_assert!(
+                matches!(classify_type_cast(self.span(), f), TypeCast::None),
+                "a quiet node is in a type cast"
+            );
+            let needs_parentheses = self.needs_parentheses(f);
+            if needs_parentheses {
+                "(".fmt(f);
+            }
+            self.write(f);
+            if needs_parentheses {
+                ")".fmt(f);
+            }
+            return;
+        }
+        let is_suppressed = f.comments().is_span_suppressed(self.span());
+        if is_suppressed {
+            write_suppressed_expression(
+                self.span(),
+                self.leading_comments_start(),
+                self.needs_parentheses(f),
+                f,
+            );
+            self.format_trailing_comments(f);
+            return;
+        }
+        if format_type_cast_comment_node(self, false, f) {
+            return;
+        }
+        let needs_parentheses = self.needs_parentheses(f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
+        self.write(f);
+        if needs_parentheses {
+            ")".fmt(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSProvideDeclaration<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        if f.comments().is_quiet(
+            self.span(),
+            || self.parent.span(),
+            self.following_span_start,
+            false,
+        ) {
+            self.write(f);
+            return;
+        }
+        let is_suppressed = f.comments().is_span_suppressed(self.span());
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSTypeFromDeclaration<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        if f.comments().is_quiet(
+            self.span(),
+            || self.parent.span(),
+            self.following_span_start,
+            false,
+        ) {
+            self.write(f);
+            return;
+        }
+        let is_suppressed = f.comments().is_span_suppressed(self.span());
+        self.format_leading_comments(f);
+        if is_suppressed {
+            FormatSuppressedNode(self.span()).fmt(f);
+        } else {
+            self.write(f);
+        }
+        self.format_trailing_comments(f);
     }
 }
 

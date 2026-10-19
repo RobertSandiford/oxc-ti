@@ -267,6 +267,9 @@ impl<'a> AssignmentLike<'a, '_> {
                 if property.readonly {
                     write!(f, ["readonly", space()]);
                 }
+                if let Some(permission) = property.permission {
+                    write!(f, [permission.to_str(), space()]);
+                }
                 format_property_key(property.key(), property.computed, f);
                 if property.optional {
                     write!(f, "?");
@@ -296,6 +299,9 @@ impl<'a> AssignmentLike<'a, '_> {
                     write!(f, ["override", space()]);
                 }
                 write!(f, ["accessor", space()]);
+                if let Some(permission) = property.permission {
+                    write!(f, [permission.to_str(), space()]);
+                }
                 format_property_key(property.key(), property.computed, f);
                 if property.definite {
                     write!(f, "!");

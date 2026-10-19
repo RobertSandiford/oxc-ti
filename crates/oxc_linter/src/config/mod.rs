@@ -18,7 +18,7 @@ pub use env::OxlintEnv;
 pub use globals::{GlobalValue, OxlintGlobals};
 pub use ignore_matcher::LintIgnoreMatcher;
 pub use overrides::OxlintOverrides;
-pub use oxlintrc::Oxlintrc;
+pub use oxlintrc::{DisableRuleCommentLocation, Oxlintrc};
 pub use plugins::LintPlugins;
 pub use rules::{ESLintRule, OxlintRules, normalize_rule_name};
 pub use settings::{OxlintSettings, ReactVersion, jsdoc::JSDocPluginSettings};

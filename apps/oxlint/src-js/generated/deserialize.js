@@ -1514,6 +1514,10 @@ function deserializeStatement(pos) {
       return deserializeBoxTSGlobalDeclaration(pos + 8);
     case 41:
       return deserializeBoxTSImportEqualsDeclaration(pos + 8);
+    case 42:
+      return deserializeBoxTSProvideDeclaration(pos + 8);
+    case 43:
+      return deserializeBoxTSTypeFromDeclaration(pos + 8);
     case 64:
       return deserializeBoxImportDeclaration(pos + 8);
     case 65:
@@ -1594,6 +1598,10 @@ function deserializeDeclaration(pos) {
       return deserializeBoxTSGlobalDeclaration(pos + 8);
     case 41:
       return deserializeBoxTSImportEqualsDeclaration(pos + 8);
+    case 42:
+      return deserializeBoxTSProvideDeclaration(pos + 8);
+    case 43:
+      return deserializeBoxTSTypeFromDeclaration(pos + 8);
     default:
       throw Error(`Unexpected discriminant ${uint8[pos]} for Declaration`);
   }
@@ -4237,9 +4245,95 @@ function deserializeTSType(pos) {
       return deserializeBoxJSDocNonNullableType(pos + 8);
     case 37:
       return deserializeBoxJSDocUnknownType(pos + 8);
+    case 38:
+      return deserializeBoxTSDistributeType(pos + 8);
+    case 39:
+      return deserializeBoxTSTypeReturn(pos + 8);
     default:
       throw Error(`Unexpected discriminant ${uint8[pos]} for TSType`);
   }
+}
+
+function deserializeTSDistributeType(pos) {
+  let start,
+    end,
+    previousParent = parent,
+    node = (parent = {
+      __proto__: NodeProto,
+      type: "TSDistributeType",
+      source: null,
+      member: null,
+      body: null,
+      start: (start = deserializeI32(pos)),
+      end: (end = deserializeI32(pos + 4)),
+      range: [start, end],
+      parent,
+    });
+  node.source = deserializeTSType(pos + 16);
+  node.member = deserializeOptionBoxTSTypeParameter(pos + 32);
+  node.body = deserializeTSType(pos + 40);
+  parent = previousParent;
+  return node;
+}
+
+function deserializeTSTypeReturn(pos) {
+  let start,
+    end,
+    previousParent = parent,
+    node = (parent = {
+      __proto__: NodeProto,
+      type: "TSTypeReturn",
+      valueType: null,
+      typeAnnotation: null,
+      start: (start = deserializeI32(pos)),
+      end: (end = deserializeI32(pos + 4)),
+      range: [start, end],
+      parent,
+    });
+  node.valueType = deserializeOptionTSType(pos + 16);
+  node.typeAnnotation = deserializeTSType(pos + 32);
+  parent = previousParent;
+  return node;
+}
+
+function deserializeTSProvideDeclaration(pos) {
+  let start,
+    end,
+    previousParent = parent,
+    node = (parent = {
+      __proto__: NodeProto,
+      type: "TSProvideDeclaration",
+      typeAnnotation: null,
+      typeAlias: null,
+      typeFrom: null,
+      start: (start = deserializeI32(pos)),
+      end: (end = deserializeI32(pos + 4)),
+      range: [start, end],
+      parent,
+    });
+  node.typeAnnotation = deserializeOptionTSType(pos + 16);
+  node.typeAlias = deserializeOptionBoxTSTypeAliasDeclaration(pos + 32);
+  node.typeFrom = deserializeOptionBoxTSTypeFromDeclaration(pos + 40);
+  parent = previousParent;
+  return node;
+}
+
+function deserializeTSTypeFromDeclaration(pos) {
+  let start,
+    end,
+    previousParent = parent,
+    node = (parent = {
+      __proto__: NodeProto,
+      type: "TSTypeFromDeclaration",
+      id: null,
+      start: (start = deserializeI32(pos)),
+      end: (end = deserializeI32(pos + 4)),
+      range: [start, end],
+      parent,
+    });
+  node.id = deserializeBindingIdentifier(pos + 16);
+  parent = previousParent;
+  return node;
 }
 
 function deserializeTSConditionalType(pos) {
@@ -4335,6 +4429,46 @@ function deserializeTSTypeOperatorOperator(pos) {
       return "unique";
     case 2:
       return "readonly";
+    case 3:
+      return "read";
+    case 4:
+      return "write";
+    case 5:
+      return "delete";
+    case 6:
+      return "readWrite";
+    case 7:
+      return "readDelete";
+    case 8:
+      return "writeDelete";
+    case 9:
+      return "readWriteDelete";
+    case 10:
+      return "none";
+    case 11:
+      return "all";
+    case 12:
+      return "r";
+    case 13:
+      return "w";
+    case 14:
+      return "d";
+    case 15:
+      return "rw";
+    case 16:
+      return "rd";
+    case 17:
+      return "wd";
+    case 18:
+      return "rwd";
+    case 19:
+      return "owned";
+    case 20:
+      return "exact";
+    case 21:
+      return "transient";
+    case 22:
+      return "deep";
     default:
       throw Error(`Unexpected discriminant ${uint8[pos]} for TSTypeOperatorOperator`);
   }
@@ -4529,6 +4663,10 @@ function deserializeTSTupleElement(pos) {
       return deserializeBoxJSDocNonNullableType(pos + 8);
     case 37:
       return deserializeBoxJSDocUnknownType(pos + 8);
+    case 38:
+      return deserializeBoxTSDistributeType(pos + 8);
+    case 39:
+      return deserializeBoxTSTypeReturn(pos + 8);
     case 64:
       return deserializeBoxTSOptionalType(pos + 8);
     case 65:
@@ -6585,6 +6723,14 @@ function deserializeBoxTSImportEqualsDeclaration(pos) {
   return deserializeTSImportEqualsDeclaration(int32[pos >> 2]);
 }
 
+function deserializeBoxTSProvideDeclaration(pos) {
+  return deserializeTSProvideDeclaration(int32[pos >> 2]);
+}
+
+function deserializeBoxTSTypeFromDeclaration(pos) {
+  return deserializeTSTypeFromDeclaration(int32[pos >> 2]);
+}
+
 function deserializeVecVariableDeclarator(pos) {
   let arr = [],
     pos32 = pos >> 2;
@@ -7183,6 +7329,40 @@ function deserializeBoxJSDocUnknownType(pos) {
   return deserializeJSDocUnknownType(int32[pos >> 2]);
 }
 
+function deserializeBoxTSDistributeType(pos) {
+  return deserializeTSDistributeType(int32[pos >> 2]);
+}
+
+function deserializeBoxTSTypeReturn(pos) {
+  return deserializeTSTypeReturn(int32[pos >> 2]);
+}
+
+function deserializeBoxTSTypeParameter(pos) {
+  return deserializeTSTypeParameter(int32[pos >> 2]);
+}
+
+function deserializeOptionBoxTSTypeParameter(pos) {
+  return int32[pos >> 2] === 0 && int32[(pos >> 2) + 1] === 0
+    ? null
+    : deserializeBoxTSTypeParameter(pos);
+}
+
+function deserializeOptionTSType(pos) {
+  return uint8[pos] === 255 ? null : deserializeTSType(pos);
+}
+
+function deserializeOptionBoxTSTypeAliasDeclaration(pos) {
+  return int32[pos >> 2] === 0 && int32[(pos >> 2) + 1] === 0
+    ? null
+    : deserializeBoxTSTypeAliasDeclaration(pos);
+}
+
+function deserializeOptionBoxTSTypeFromDeclaration(pos) {
+  return int32[pos >> 2] === 0 && int32[(pos >> 2) + 1] === 0
+    ? null
+    : deserializeBoxTSTypeFromDeclaration(pos);
+}
+
 function deserializeVecTSType(pos) {
   let arr = [],
     pos32 = pos >> 2;
@@ -7219,18 +7399,14 @@ function deserializeBoxTSQualifiedName(pos) {
   return deserializeTSQualifiedName(int32[pos >> 2]);
 }
 
-function deserializeOptionTSType(pos) {
-  return uint8[pos] === 255 ? null : deserializeTSType(pos);
-}
-
 function deserializeVecTSTypeParameter(pos) {
   let arr = [],
     pos32 = pos >> 2;
   pos = int32[pos32];
-  let endPos = pos + int32[pos32 + 2] * 80;
+  let endPos = pos + int32[pos32 + 2] * 88;
   for (; pos !== endPos;) {
     arr.push(deserializeTSTypeParameter(pos));
-    pos += 80;
+    pos += 88;
   }
   return arr;
 }
@@ -7287,10 +7463,6 @@ function deserializeOptionBoxTSModuleBlock(pos) {
   return int32[pos >> 2] === 0 && int32[(pos >> 2) + 1] === 0
     ? null
     : deserializeBoxTSModuleBlock(pos);
-}
-
-function deserializeBoxTSTypeParameter(pos) {
-  return deserializeTSTypeParameter(int32[pos >> 2]);
 }
 
 function deserializeOptionBoxObjectExpression(pos) {

@@ -125,6 +125,105 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         Some(TSTypeAnnotation::boxed(self.end_span(start), type_annotation, self))
     }
 
+    /// TightScript: `provide Type`, `provide type Name = Type`, or `provide from`.
+    pub(crate) fn parse_ts_provide_declaration(&mut self) -> Statement<'a> {
+        let start = self.cur_start();
+        self.bump_any(); // bump `provide`
+        let mut type_annotation = None;
+        let mut type_alias = None;
+        let mut type_from = None;
+        if self.at(Kind::From) && self.lookahead(Self::next_is_not_continuation_of_type_named_from)
+        {
+            self.bump_any(); // bump `from`
+        } else if self.at(Kind::Type) && self.lookahead(Self::next_is_provide_alias_head) {
+            match self.parse_ts_type_alias_declaration(self.cur_start(), &Modifiers::empty()) {
+                Declaration::TSTypeAliasDeclaration(alias) => type_alias = Some(alias),
+                Declaration::TSTypeFromDeclaration(from) => type_from = Some(from),
+                _ => unreachable!(),
+            }
+        } else if self.at(Kind::Type) && self.lookahead(Self::next_is_start_of_type_return) {
+            // An alias head without `=`, as tsc reports it.
+            let type_start = self.cur_start();
+            self.bump_any(); // bump `type`
+            let name = if self.cur_kind().is_identifier() { self.cur_src() } else { "Name" };
+            let provided = self.parse_ts_type();
+            let provided_span = provided.span();
+            self.error(diagnostics::provide_type_without_definition(
+                Span::new(type_start, provided_span.end),
+                name,
+                provided_span.source_text(self.source_text),
+            ));
+            type_annotation = Some(provided);
+            self.asi();
+        } else {
+            type_annotation = Some(self.parse_ts_type());
+            self.asi();
+        }
+        Statement::new_ts_provide_declaration(
+            self.end_span(start),
+            type_annotation,
+            type_alias,
+            type_from,
+            self,
+        )
+    }
+
+    /// At `provide`: never valid JS when an identifier or literal follows on the same line.
+    /// Types starting with `[`, `(`, `-` or `<` would read as JS, so they use `provide type T = ...`.
+    pub(crate) fn next_is_start_of_provide(&mut self) -> bool {
+        self.bump_any();
+        if self.cur_token().is_on_new_line() {
+            return false;
+        }
+        match self.cur_kind() {
+            Kind::LCurly
+            | Kind::Str
+            | Kind::Typeof
+            | Kind::Void
+            | Kind::Null
+            | Kind::This
+            | Kind::New
+            | Kind::True
+            | Kind::False => true,
+            kind if kind.is_number() => true,
+            Kind::As | Kind::Satisfies => false,
+            kind => kind.is_identifier(),
+        }
+    }
+
+    /// At `from` after `provide`: `from.T`, `from<T>` and `from[]` use a type named `from`.
+    fn next_is_not_continuation_of_type_named_from(&mut self) -> bool {
+        self.bump_any();
+        self.cur_token().is_on_new_line()
+            || !matches!(self.cur_kind(), Kind::Dot | Kind::LAngle | Kind::LBrack)
+    }
+
+    /// At `type` after `provide`: `type G = X`, `type G from`, or `type G<T> = X`.
+    fn next_is_provide_alias_head(&mut self) -> bool {
+        self.bump_any();
+        if self.cur_token().is_on_new_line() || !self.cur_kind().is_identifier() {
+            return false;
+        }
+        self.bump_any();
+        match self.cur_kind() {
+            Kind::Eq | Kind::From => true,
+            Kind::LAngle => {
+                let mut depth = 1;
+                while depth > 0 && !self.at(Kind::Eof) {
+                    self.bump_any();
+                    match self.cur_kind() {
+                        Kind::LAngle => depth += 1,
+                        Kind::RAngle => depth -= 1,
+                        _ => {}
+                    }
+                }
+                self.bump_any();
+                self.at(Kind::Eq)
+            }
+            _ => false,
+        }
+    }
+
     pub(crate) fn parse_ts_type_alias_declaration(
         &mut self,
         start: u32,
@@ -143,6 +242,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     self.error(diagnostics::const_type_parameter(param.span));
                 }
             }
+        }
+        // TightScript: `type R from`. The statement after it is separate and has no `;` before it.
+        if self.at(Kind::From) {
+            self.bump_any();
+            if let Some(type_params) = &params {
+                self.error(diagnostics::type_from_type_parameters(type_params.span));
+            }
+            return Declaration::new_ts_type_from_declaration(self.end_span(start), id, self);
         }
         self.expect(Kind::Eq);
 
@@ -283,6 +390,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         loop {
             let start = self.cur_start();
+            let remove_exact = self.eat_heritage_minus_exact();
             let (type_name, type_argument) = if self.at(Kind::This)
                 || self
                     .cur_kind()
@@ -307,12 +415,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             } else {
                 (self.parse_invalid_ts_interface_heritage_type_name(), None)
             };
-            extends.push(TSInterfaceHeritage::new(
-                self.end_span(start),
-                type_name,
-                type_argument,
-                self,
-            ));
+            let mut heritage =
+                TSInterfaceHeritage::new(self.end_span(start), type_name, type_argument, self);
+            heritage.remove_exact = remove_exact;
+            extends.push(heritage);
 
             if !self.at(Kind::Comma) {
                 break;
@@ -371,7 +477,37 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             /* permit_const_as_modifier */ true,
             /* stop_on_start_of_class_static_block */ false,
         );
+        let (modifiers, permission) = self.parse_modifiers_and_permission(modifiers, |p| {
+            p.parse_modifiers(
+                /* permit_const_as_modifier */ true,
+                /* stop_on_start_of_class_static_block */ false,
+            )
+        });
 
+        let mut signature = self.parse_ts_type_signature_after_modifiers(start, modifiers);
+        if let Some((permission, span)) = permission {
+            match &mut signature {
+                TSSignature::TSPropertySignature(property) => {
+                    property.permission = Some(permission);
+                }
+                TSSignature::TSIndexSignature(index) => {
+                    index.permission = Some(permission);
+                }
+                _ => self.error(diagnostics::permission_modifier_not_on_property(span)),
+            }
+        }
+        signature
+    }
+
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "the body is upstream's, unchanged, which keeps merges simple"
+    )]
+    fn parse_ts_type_signature_after_modifiers(
+        &mut self,
+        start: u32,
+        modifiers: Modifiers,
+    ) -> TSSignature<'a> {
         if self.is_index_signature() {
             self.verify_modifiers(
                 &modifiers,

@@ -59,6 +59,9 @@ const AST_NODE_NEEDS_PARENTHESES: &[&str] = &[
     "TSTypeQuery",
     "TSFunctionType",
     "TSTypeOperator",
+    // TightScript
+    "TSDistributeType",
+    "TSTypeReturn",
 ];
 
 pub struct FormatterFormatGenerator;

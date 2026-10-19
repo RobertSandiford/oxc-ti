@@ -1,0 +1,11 @@
+function tp1<owned T>(x: T): T { return x; }
+function tp2<exact?   T>(x: T): T { return x; }
+function tp3<owned exact? T>(x: T): T { return x; }
+function tp4<exact const T>(x: T): T { return x; }
+function tp5<deep rw T>(x: T): T { return x; }
+function tp5lazy<lazy deep rwd T>(x: T): T { return x; }
+function tp6<T as exact extends { a: string }>(x: T): T { return x; }
+function tp7<T as deep exact extends { a: string }>(x: T): T { return x; }
+const arrow1 = <owned T,>(x: T) => x;
+const arrow2 = <deep rw T>(x: T) => x;
+function names<exact, owned exact>() {}

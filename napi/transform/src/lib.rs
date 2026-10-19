@@ -11,6 +11,12 @@
 #[global_allocator]
 static ALLOC: mimalloc_safe::MiMalloc = mimalloc_safe::MiMalloc;
 
+mod blank;
+pub use blank::*;
+
+mod compile;
+pub use compile::*;
+
 mod isolated_declaration;
 pub use isolated_declaration::*;
 

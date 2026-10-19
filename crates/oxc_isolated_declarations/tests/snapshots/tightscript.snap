@@ -1,0 +1,22 @@
+---
+source: crates/oxc_isolated_declarations/tests/mod.rs
+input_file: crates/oxc_isolated_declarations/tests/fixtures/tightscript.ts
+---
+```
+==================== .D.TS ====================
+
+export declare class M4 {
+	read x: number;
+	static read z: number;
+	private readwrite y;
+	accessor readwrite p: number;
+}
+export interface Shapes {
+	readwrite a: read string[];
+	writedelete [key: string]: unknown;
+	t: [readdelete name: string];
+	m: { -write [K in keyof Shapes]: Shapes[K] };
+}
+export declare function keep<deep rw T>(x: T): readwritedelete T;
+export declare function f1: F;
+export declare function f3: (GF);

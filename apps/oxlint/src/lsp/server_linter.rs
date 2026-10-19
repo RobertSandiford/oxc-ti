@@ -1459,6 +1459,12 @@ mod test {
     }
 
     #[test]
+    fn test_disable_rule_comment_same_line() {
+        Tester::new("fixtures/lsp/disable_rule_comment_same_line", json!({}))
+            .test_and_snapshot_single_file("test.js");
+    }
+
+    #[test]
     fn test_allow_unused_directives() {
         Tester::new(
             "fixtures/lsp/allow_unused_disabled_directives",

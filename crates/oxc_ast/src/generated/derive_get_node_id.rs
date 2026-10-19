@@ -1114,6 +1114,34 @@ impl GetNodeId for TSType<'_> {
     }
 }
 
+impl GetNodeId for TSDistributeType<'_> {
+    #[inline]
+    fn node_id(&self) -> NodeId {
+        self.node_id()
+    }
+}
+
+impl GetNodeId for TSTypeReturn<'_> {
+    #[inline]
+    fn node_id(&self) -> NodeId {
+        self.node_id()
+    }
+}
+
+impl GetNodeId for TSProvideDeclaration<'_> {
+    #[inline]
+    fn node_id(&self) -> NodeId {
+        self.node_id()
+    }
+}
+
+impl GetNodeId for TSTypeFromDeclaration<'_> {
+    #[inline]
+    fn node_id(&self) -> NodeId {
+        self.node_id()
+    }
+}
+
 impl GetNodeId for TSConditionalType<'_> {
     #[inline]
     fn node_id(&self) -> NodeId {

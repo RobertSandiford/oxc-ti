@@ -1,0 +1,9 @@
+{
+  "options": {
+    "disableRuleCommentLocation": "sameLine"
+  },
+  "rules": {
+    "no-debugger": "error",
+    "no-console": "error"
+  }
+}

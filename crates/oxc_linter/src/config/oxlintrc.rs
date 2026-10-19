@@ -64,6 +64,24 @@ pub struct OxlintOptions {
     /// Only supported in the root configuration file.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub respect_eslint_disable_directives: Option<bool>,
+    /// Where the editor's "Disable rule for this line" fix puts its comment.
+    ///
+    /// - `"separateLine"` inserts `// oxlint-disable-next-line rule` on a new line above.
+    /// - `"sameLine"` appends `// oxlint-disable-line rule` to the end of the line.
+    ///
+    /// Defaults to `"separateLine"`.
+    /// Only supported in the root configuration file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disable_rule_comment_location: Option<DisableRuleCommentLocation>,
+}
+
+/// Placement of the comment created by the "Disable rule for this line" fix.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum DisableRuleCommentLocation {
+    #[default]
+    SeparateLine,
+    SameLine,
 }
 
 impl OxlintOptions {
@@ -75,6 +93,7 @@ impl OxlintOptions {
             && self.max_warnings.is_none()
             && self.report_unused_disable_directives.is_none()
             && self.respect_eslint_disable_directives.is_none()
+            && self.disable_rule_comment_location.is_none()
     }
 
     #[must_use]
@@ -90,6 +109,9 @@ impl OxlintOptions {
             respect_eslint_disable_directives: self
                 .respect_eslint_disable_directives
                 .or(other.respect_eslint_disable_directives),
+            disable_rule_comment_location: self
+                .disable_rule_comment_location
+                .or(other.disable_rule_comment_location),
         }
     }
 }
@@ -641,6 +663,29 @@ mod test {
         )
         .unwrap();
         assert_eq!(config.options.respect_eslint_disable_directives, Some(true));
+
+        let config: Oxlintrc = serde_json::from_value(
+            json!({ "options": { "disableRuleCommentLocation": "sameLine" } }),
+        )
+        .unwrap();
+        assert_eq!(
+            config.options.disable_rule_comment_location,
+            Some(DisableRuleCommentLocation::SameLine)
+        );
+
+        let config: Oxlintrc = serde_json::from_value(
+            json!({ "options": { "disableRuleCommentLocation": "separateLine" } }),
+        )
+        .unwrap();
+        assert_eq!(
+            config.options.disable_rule_comment_location,
+            Some(DisableRuleCommentLocation::SeparateLine)
+        );
+
+        let config: Result<Oxlintrc, _> = serde_json::from_value(
+            json!({ "options": { "disableRuleCommentLocation": "endOfFile" } }),
+        );
+        assert!(config.is_err());
     }
 
     #[test]

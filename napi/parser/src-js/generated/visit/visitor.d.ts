@@ -286,6 +286,8 @@ export interface VisitorObject {
   "TSConstructorType:exit"?: (node: ESTree.TSConstructorType) => void;
   TSDeclareFunction?: (node: ESTree.Function) => void;
   "TSDeclareFunction:exit"?: (node: ESTree.Function) => void;
+  TSDistributeType?: (node: ESTree.TSDistributeType) => void;
+  "TSDistributeType:exit"?: (node: ESTree.TSDistributeType) => void;
   TSEmptyBodyFunctionExpression?: (node: ESTree.Function) => void;
   "TSEmptyBodyFunctionExpression:exit"?: (node: ESTree.Function) => void;
   TSEnumBody?: (node: ESTree.TSEnumBody) => void;
@@ -350,6 +352,8 @@ export interface VisitorObject {
   "TSParenthesizedType:exit"?: (node: ESTree.TSParenthesizedType) => void;
   TSPropertySignature?: (node: ESTree.TSPropertySignature) => void;
   "TSPropertySignature:exit"?: (node: ESTree.TSPropertySignature) => void;
+  TSProvideDeclaration?: (node: ESTree.TSProvideDeclaration) => void;
+  "TSProvideDeclaration:exit"?: (node: ESTree.TSProvideDeclaration) => void;
   TSQualifiedName?: (node: ESTree.TSQualifiedName) => void;
   "TSQualifiedName:exit"?: (node: ESTree.TSQualifiedName) => void;
   TSRestType?: (node: ESTree.TSRestType) => void;
@@ -366,6 +370,8 @@ export interface VisitorObject {
   "TSTypeAnnotation:exit"?: (node: ESTree.TSTypeAnnotation) => void;
   TSTypeAssertion?: (node: ESTree.TSTypeAssertion) => void;
   "TSTypeAssertion:exit"?: (node: ESTree.TSTypeAssertion) => void;
+  TSTypeFromDeclaration?: (node: ESTree.TSTypeFromDeclaration) => void;
+  "TSTypeFromDeclaration:exit"?: (node: ESTree.TSTypeFromDeclaration) => void;
   TSTypeLiteral?: (node: ESTree.TSTypeLiteral) => void;
   "TSTypeLiteral:exit"?: (node: ESTree.TSTypeLiteral) => void;
   TSTypeOperator?: (node: ESTree.TSTypeOperator) => void;
@@ -382,6 +388,8 @@ export interface VisitorObject {
   "TSTypeQuery:exit"?: (node: ESTree.TSTypeQuery) => void;
   TSTypeReference?: (node: ESTree.TSTypeReference) => void;
   "TSTypeReference:exit"?: (node: ESTree.TSTypeReference) => void;
+  TSTypeReturn?: (node: ESTree.TSTypeReturn) => void;
+  "TSTypeReturn:exit"?: (node: ESTree.TSTypeReturn) => void;
   TSUnionType?: (node: ESTree.TSUnionType) => void;
   "TSUnionType:exit"?: (node: ESTree.TSUnionType) => void;
 }

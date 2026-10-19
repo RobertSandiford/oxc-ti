@@ -48,6 +48,7 @@ impl<'a> AstKind<'a> {
             | Self::TSNamespaceDeclaration(_) | Self::TSGlobalDeclaration(_)
             | Self::VariableDeclaration(_) | Self::TSInterfaceDeclaration(_)
             | Self::TSTypeAliasDeclaration(_) | Self::TSImportEqualsDeclaration(_) | Self::PropertyDefinition(_)
+            | Self::TSProvideDeclaration(_) | Self::TSTypeFromDeclaration(_)
         ) || self.is_module_declaration()
     }
 
@@ -635,6 +636,10 @@ impl<'a> AstKind<'a> {
             Self::JSDocNullableType(_) => "JSDocNullableType".into(),
             Self::JSDocNonNullableType(_) => "JSDocNonNullableType".into(),
             Self::JSDocUnknownType(_) => "JSDocUnknownType".into(),
+            Self::TSDistributeType(_) => "TSDistributeType".into(),
+            Self::TSTypeReturn(_) => "TSTypeReturn".into(),
+            Self::TSProvideDeclaration(_) => "TSProvideDeclaration".into(),
+            Self::TSTypeFromDeclaration(_) => "TSTypeFromDeclaration".into(),
             Self::AssignmentTargetRest(_) => "AssignmentTargetRest".into(),
             Self::AssignmentTargetPropertyIdentifier(_) => {
                 "AssignmentTargetPropertyIdentifier".into()

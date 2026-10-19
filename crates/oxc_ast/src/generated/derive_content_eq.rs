@@ -704,6 +704,8 @@ impl ContentEq for Statement<'_> {
             (Self::TSImportEqualsDeclaration(a), Self::TSImportEqualsDeclaration(b)) => {
                 a.content_eq(b)
             }
+            (Self::TSProvideDeclaration(a), Self::TSProvideDeclaration(b)) => a.content_eq(b),
+            (Self::TSTypeFromDeclaration(a), Self::TSTypeFromDeclaration(b)) => a.content_eq(b),
             (Self::ImportDeclaration(a), Self::ImportDeclaration(b)) => a.content_eq(b),
             (Self::ExportAllDeclaration(a), Self::ExportAllDeclaration(b)) => a.content_eq(b),
             (Self::ExportDefaultDeclaration(a), Self::ExportDefaultDeclaration(b)) => {
@@ -757,6 +759,8 @@ impl ContentEq for Declaration<'_> {
             (Self::TSImportEqualsDeclaration(a), Self::TSImportEqualsDeclaration(b)) => {
                 a.content_eq(b)
             }
+            (Self::TSProvideDeclaration(a), Self::TSProvideDeclaration(b)) => a.content_eq(b),
+            (Self::TSTypeFromDeclaration(a), Self::TSTypeFromDeclaration(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -1083,6 +1087,7 @@ impl ContentEq for FormalParameters<'_> {
         ContentEq::content_eq(&self.kind, &other.kind)
             && ContentEq::content_eq(&self.items, &other.items)
             && ContentEq::content_eq(&self.rest, &other.rest)
+            && ContentEq::content_eq(&self.function_type, &other.function_type)
     }
 }
 
@@ -1280,6 +1285,7 @@ impl ContentEq for PropertyDefinition<'_> {
             && ContentEq::content_eq(&self.definite, &other.definite)
             && ContentEq::content_eq(&self.readonly, &other.readonly)
             && ContentEq::content_eq(&self.accessibility, &other.accessibility)
+            && ContentEq::content_eq(&self.permission, &other.permission)
     }
 }
 
@@ -1345,6 +1351,7 @@ impl ContentEq for AccessorProperty<'_> {
             && ContentEq::content_eq(&self.r#override, &other.r#override)
             && ContentEq::content_eq(&self.definite, &other.definite)
             && ContentEq::content_eq(&self.accessibility, &other.accessibility)
+            && ContentEq::content_eq(&self.permission, &other.permission)
     }
 }
 
@@ -1941,8 +1948,39 @@ impl ContentEq for TSType<'_> {
             (Self::JSDocNullableType(a), Self::JSDocNullableType(b)) => a.content_eq(b),
             (Self::JSDocNonNullableType(a), Self::JSDocNonNullableType(b)) => a.content_eq(b),
             (Self::JSDocUnknownType(a), Self::JSDocUnknownType(b)) => a.content_eq(b),
+            (Self::TSDistributeType(a), Self::TSDistributeType(b)) => a.content_eq(b),
+            (Self::TSTypeReturn(a), Self::TSTypeReturn(b)) => a.content_eq(b),
             _ => false,
         }
+    }
+}
+
+impl ContentEq for TSDistributeType<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.source, &other.source)
+            && ContentEq::content_eq(&self.member, &other.member)
+            && ContentEq::content_eq(&self.body, &other.body)
+    }
+}
+
+impl ContentEq for TSTypeReturn<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.value_type, &other.value_type)
+            && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
+    }
+}
+
+impl ContentEq for TSProvideDeclaration<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
+            && ContentEq::content_eq(&self.type_alias, &other.type_alias)
+            && ContentEq::content_eq(&self.type_from, &other.type_from)
+    }
+}
+
+impl ContentEq for TSTypeFromDeclaration<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.id, &other.id)
     }
 }
 
@@ -1976,11 +2014,19 @@ impl ContentEq for TSParenthesizedType<'_> {
 impl ContentEq for TSTypeOperator<'_> {
     fn content_eq(&self, other: &Self) -> bool {
         ContentEq::content_eq(&self.operator, &other.operator)
+            && ContentEq::content_eq(&self.lazy, &other.lazy)
+            && ContentEq::content_eq(&self.sign, &other.sign)
             && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
     }
 }
 
 impl ContentEq for TSTypeOperatorOperator {
+    fn content_eq(&self, other: &Self) -> bool {
+        self == other
+    }
+}
+
+impl ContentEq for TSPermissionSign {
     fn content_eq(&self, other: &Self) -> bool {
         self == other
     }
@@ -2010,6 +2056,7 @@ impl ContentEq for TSNamedTupleMember<'_> {
         ContentEq::content_eq(&self.label, &other.label)
             && ContentEq::content_eq(&self.element_type, &other.element_type)
             && ContentEq::content_eq(&self.optional, &other.optional)
+            && ContentEq::content_eq(&self.permission, &other.permission)
     }
 }
 
@@ -2067,6 +2114,8 @@ impl ContentEq for TSTupleElement<'_> {
             (Self::JSDocNullableType(a), Self::JSDocNullableType(b)) => a.content_eq(b),
             (Self::JSDocNonNullableType(a), Self::JSDocNonNullableType(b)) => a.content_eq(b),
             (Self::JSDocUnknownType(a), Self::JSDocUnknownType(b)) => a.content_eq(b),
+            (Self::TSDistributeType(a), Self::TSDistributeType(b)) => a.content_eq(b),
+            (Self::TSTypeReturn(a), Self::TSTypeReturn(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -2195,6 +2244,13 @@ impl ContentEq for TSTypeParameter<'_> {
             && ContentEq::content_eq(&self.r#in, &other.r#in)
             && ContentEq::content_eq(&self.out, &other.out)
             && ContentEq::content_eq(&self.r#const, &other.r#const)
+            && ContentEq::content_eq(&self.owned, &other.owned)
+            && ContentEq::content_eq(&self.exact, &other.exact)
+            && ContentEq::content_eq(&self.exact_optional, &other.exact_optional)
+            && ContentEq::content_eq(&self.deep_permission, &other.deep_permission)
+            && ContentEq::content_eq(&self.deep_lazy, &other.deep_lazy)
+            && ContentEq::content_eq(&self.as_exact, &other.as_exact)
+            && ContentEq::content_eq(&self.as_exact_deep, &other.as_exact_deep)
     }
 }
 
@@ -2223,6 +2279,7 @@ impl ContentEq for TSClassImplements<'_> {
     fn content_eq(&self, other: &Self) -> bool {
         ContentEq::content_eq(&self.expression, &other.expression)
             && ContentEq::content_eq(&self.type_arguments, &other.type_arguments)
+            && ContentEq::content_eq(&self.remove_exact, &other.remove_exact)
     }
 }
 
@@ -2249,6 +2306,7 @@ impl ContentEq for TSPropertySignature<'_> {
             && ContentEq::content_eq(&self.readonly, &other.readonly)
             && ContentEq::content_eq(&self.key, &other.key)
             && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
+            && ContentEq::content_eq(&self.permission, &other.permission)
     }
 }
 
@@ -2276,6 +2334,7 @@ impl ContentEq for TSIndexSignature<'_> {
             && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
             && ContentEq::content_eq(&self.readonly, &other.readonly)
             && ContentEq::content_eq(&self.r#static, &other.r#static)
+            && ContentEq::content_eq(&self.permission, &other.permission)
     }
 }
 
@@ -2326,6 +2385,7 @@ impl ContentEq for TSInterfaceHeritage<'_> {
     fn content_eq(&self, other: &Self) -> bool {
         ContentEq::content_eq(&self.type_name, &other.type_name)
             && ContentEq::content_eq(&self.type_arguments, &other.type_arguments)
+            && ContentEq::content_eq(&self.remove_exact, &other.remove_exact)
     }
 }
 
@@ -2334,6 +2394,7 @@ impl ContentEq for TSTypePredicate<'_> {
         ContentEq::content_eq(&self.parameter_name, &other.parameter_name)
             && ContentEq::content_eq(&self.asserts, &other.asserts)
             && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
+            && ContentEq::content_eq(&self.soft, &other.soft)
     }
 }
 
@@ -2477,6 +2538,8 @@ impl ContentEq for TSMappedType<'_> {
             && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
             && ContentEq::content_eq(&self.optional, &other.optional)
             && ContentEq::content_eq(&self.readonly, &other.readonly)
+            && ContentEq::content_eq(&self.permission, &other.permission)
+            && ContentEq::content_eq(&self.permission_sign, &other.permission_sign)
     }
 }
 

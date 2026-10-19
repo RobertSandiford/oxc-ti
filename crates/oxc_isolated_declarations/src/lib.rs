@@ -14,12 +14,14 @@ use oxc_ast::{
     ast::*,
     builder::{AstBuilder, GetAstBuilder},
 };
-use oxc_ast_visit::Visit;
+use oxc_ast_visit::{Visit, VisitMut};
 use oxc_diagnostics::{Diagnostics, OxcDiagnostic};
 use oxc_span::{GetSpan, SPAN, SourceType};
 use oxc_str::{IdentHashSet, Str};
 
-use crate::{diagnostics::function_with_assigning_properties, scope::ScopeTree};
+use crate::{
+    diagnostics::function_with_assigning_properties, permissions::LongPermissions, scope::ScopeTree,
+};
 
 mod class;
 mod declaration;
@@ -30,6 +32,7 @@ mod function;
 mod inferrer;
 mod literal;
 mod module;
+mod permissions;
 mod return_type;
 mod scope;
 mod signatures;
@@ -97,7 +100,7 @@ impl<'a> IsolatedDeclarations<'a> {
         };
         let source_type = SourceType::d_ts();
         let stmts = self.transform_program(program);
-        let program = Program::new(
+        let mut program = Program::new(
             SPAN,
             source_type,
             program.source_text,
@@ -114,6 +117,7 @@ impl<'a> IsolatedDeclarations<'a> {
             stmts,
             &self,
         );
+        LongPermissions.visit_program(&mut program);
         IsolatedDeclarationsReturn { program, diagnostics: self.take_errors() }
     }
 

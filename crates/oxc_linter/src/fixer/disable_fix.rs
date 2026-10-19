@@ -1,6 +1,8 @@
 use oxc_span::Span;
 
-use crate::{Fix, FixKind, Message, oxc_code_short_canonical_name};
+use crate::{
+    Fix, FixKind, Message, config::DisableRuleCommentLocation, oxc_code_short_canonical_name,
+};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -11,7 +13,12 @@ enum DisableDirective {
 }
 
 impl Message {
-    pub(crate) fn add_ignore_fix(&mut self, section_offset: u32, section_source_text: &str) {
+    pub(crate) fn add_ignore_fix(
+        &mut self,
+        section_offset: u32,
+        section_source_text: &str,
+        line_comment_location: DisableRuleCommentLocation,
+    ) {
         // If the error is exactly at the section offset and has 0 span length, it means that the file is the problem
         // and attaching a ignore comment would not ignore the error.
         // This is because the ignore comment would need to be placed before the error offset, which is not possible.
@@ -32,11 +39,64 @@ impl Message {
 
         let Some(rule_name) = oxc_code_short_canonical_name(&self.error.code) else { return };
 
+        let line_fix = match line_comment_location {
+            DisableRuleCommentLocation::SeparateLine => disable_for_this_line(
+                &rule_name,
+                self.span.start,
+                section_offset,
+                section_source_text,
+            ),
+            DisableRuleCommentLocation::SameLine => {
+                disable_for_this_line_on_same_line(&rule_name, self.span.start, section_source_text)
+            }
+        };
+
         self.fixes.extend_fix(vec![
-            disable_for_this_line(&rule_name, self.span.start, section_offset, section_source_text),
+            line_fix,
             disable_for_this_section(&rule_name, section_offset, section_source_text),
         ]);
     }
+}
+
+/// Appends `// oxlint-disable-line` to the line where the error starts, as ESLint's
+/// `"sameLine"` location does.
+#[expect(clippy::cast_possible_truncation)]
+fn disable_for_this_line_on_same_line(
+    rule_name: &str,
+    error_offset: u32,
+    section_source_text: &str,
+) -> Fix {
+    let bytes = section_source_text.as_bytes();
+
+    if let Some(fix) = merge_into_inline_disable_line_comment(rule_name, error_offset, bytes) {
+        return fix;
+    }
+
+    let mut line_end = error_offset as usize;
+    while line_end < bytes.len() && !matches!(bytes[line_end], b'\n' | b'\r') {
+        line_end += 1;
+    }
+
+    Fix {
+        message: Some(Cow::Owned(format!("Disable {rule_name} for this line"))),
+        content: Cow::Owned(format!(" // oxlint-disable-line {rule_name}")),
+        span: Span::empty(line_end as u32),
+        kind: FixKind::IgnoreFix,
+    }
+}
+
+fn merge_into_inline_disable_line_comment(
+    rule_name: &str,
+    error_offset: u32,
+    bytes: &[u8],
+) -> Option<Fix> {
+    let existing_comment_end = get_inline_disable_line_comment_end(error_offset, bytes)?;
+    Some(Fix {
+        message: Some(Cow::Owned(format!("Disable {rule_name} for this line"))),
+        content: Cow::Owned(format!(" {rule_name}")),
+        span: Span::empty(existing_comment_end),
+        kind: FixKind::IgnoreFix,
+    })
 }
 
 fn disable_for_this_line(
@@ -48,14 +108,8 @@ fn disable_for_this_line(
     let bytes = section_source_text.as_bytes();
     let message = format!("Disable {rule_name} for this line");
 
-    // Reuse an inline disable-line comment on the same line when present.
-    if let Some(existing_comment_end) = get_inline_disable_line_comment_end(error_offset, bytes) {
-        return Fix {
-            message: Some(Cow::Owned(message)),
-            content: Cow::Owned(format!(" {rule_name}")),
-            span: Span::empty(existing_comment_end),
-            kind: FixKind::IgnoreFix,
-        };
+    if let Some(fix) = merge_into_inline_disable_line_comment(rule_name, error_offset, bytes) {
+        return fix;
     }
 
     // Find the line break before the error
@@ -373,7 +427,7 @@ mod tests {
     use oxc_diagnostics::OxcDiagnostic;
     use oxc_span::Span;
 
-    use crate::{Message, PossibleFixes};
+    use crate::{Message, PossibleFixes, config::DisableRuleCommentLocation};
 
     fn message_with_span(span: Span) -> Message {
         Message::new(
@@ -388,7 +442,7 @@ mod tests {
     fn ignore_fix_is_not_created_for_out_of_bounds_span() {
         let mut message = message_with_span(Span::new(1, 2));
 
-        message.add_ignore_fix(0, "");
+        message.add_ignore_fix(0, "", DisableRuleCommentLocation::SeparateLine);
 
         assert!(message.fixes.is_empty());
     }
@@ -397,9 +451,82 @@ mod tests {
     fn ignore_fix_is_not_created_for_non_utf8_boundary_span() {
         let mut message = message_with_span(Span::new(1, 2));
 
-        message.add_ignore_fix(0, "\u{e9}");
+        message.add_ignore_fix(0, "\u{e9}", DisableRuleCommentLocation::SeparateLine);
 
         assert!(message.fixes.is_empty());
+    }
+
+    #[test]
+    fn ignore_fix_uses_same_line_location() {
+        let source = "foo();\nbar();";
+        let mut message = message_with_span(Span::new(7, 12));
+
+        message.add_ignore_fix(0, source, DisableRuleCommentLocation::SameLine);
+
+        let PossibleFixes::Multiple(fixes) = &message.fixes else {
+            panic!("expected line and section fixes, got {:?}", message.fixes);
+        };
+        assert_eq!(fixes[0].content, " // oxlint-disable-line test-plugin/test-rule");
+        assert_eq!(fixes[0].span, Span::empty(13));
+    }
+
+    #[test]
+    fn disable_on_same_line_appends_to_single_line() {
+        let source = "console.log('hello');";
+        let fix = super::disable_for_this_line_on_same_line("no-console", 0, source);
+
+        assert_eq!(fix.content, " // oxlint-disable-line no-console");
+        assert_eq!(fix.span, Span::empty(21));
+    }
+
+    #[test]
+    fn disable_on_same_line_inserts_before_lf() {
+        let source = "function test() {\n    console.log('hello');\n}";
+        let fix = super::disable_for_this_line_on_same_line("no-console", 22, source);
+
+        assert_eq!(fix.content, " // oxlint-disable-line no-console");
+        assert_eq!(fix.span, Span::empty(43));
+    }
+
+    #[test]
+    fn disable_on_same_line_inserts_before_crlf() {
+        let source = "function test() {\r\n    console.log('hello');\r\n}";
+        let fix = super::disable_for_this_line_on_same_line("no-console", 23, source);
+
+        assert_eq!(fix.content, " // oxlint-disable-line no-console");
+        assert_eq!(fix.span, Span::empty(44));
+    }
+
+    #[test]
+    fn disable_on_same_line_uses_line_where_error_starts() {
+        let source = "foo(\n  bar,\n);";
+        let fix = super::disable_for_this_line_on_same_line("no-console", 0, source);
+
+        assert_eq!(fix.content, " // oxlint-disable-line no-console");
+        assert_eq!(fix.span, Span::empty(4));
+    }
+
+    #[test]
+    fn disable_on_same_line_merges_with_existing_disable_line_comment() {
+        let existing = "// oxlint-disable-line no-alert";
+        let source = format!("console.log('hello'); {existing}\nfoo();");
+        let insert_offset = source.find(existing).unwrap() as u32 + existing.len() as u32;
+
+        let fix = super::disable_for_this_line_on_same_line("no-console", 0, &source);
+
+        assert_eq!(fix.content, " no-console");
+        assert_eq!(fix.span, Span::empty(insert_offset));
+    }
+
+    #[test]
+    fn disable_on_same_line_ignores_disable_next_line_comment_above() {
+        let source = "// oxlint-disable-next-line no-alert\nconsole.log('hello');";
+        let error_offset = source.find("console").unwrap() as u32;
+
+        let fix = super::disable_for_this_line_on_same_line("no-console", error_offset, source);
+
+        assert_eq!(fix.content, " // oxlint-disable-line no-console");
+        assert_eq!(fix.span, Span::empty(source.len() as u32));
     }
 
     #[test]

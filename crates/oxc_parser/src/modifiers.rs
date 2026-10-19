@@ -94,6 +94,13 @@ mod modifiers {
             self.offsets[kind as usize] = MaybeUninit::new(start);
         }
 
+        /// TightScript: add modifiers parsed after a member's permission word.
+        pub(crate) fn merge(&mut self, other: &Modifiers) {
+            for modifier in other.iter() {
+                self.add(modifier.kind, modifier.span().start);
+            }
+        }
+
         #[inline]
         pub fn contains(&self, target: ModifierKind) -> bool {
             self.kinds.contains(target)
@@ -630,7 +637,7 @@ impl<C: Config> ParserImpl<'_, C> {
         }
     }
 
-    fn next_token_is_on_same_line_and_can_follow_modifier(&mut self) -> bool {
+    pub(crate) fn next_token_is_on_same_line_and_can_follow_modifier(&mut self) -> bool {
         let next = self.lexer.peek_token();
         !next.is_on_new_line() && Self::can_follow_modifier(next.kind())
     }

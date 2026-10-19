@@ -13,6 +13,8 @@
     "apps/oxlint/test/fixtures/sourceCode_token_methods/files/**",
     "apps/oxlint/test/fixtures/tokens/files/**",
     "apps/oxlint/test/fixtures/tokens_unambiguous_await/files/**",
+    // TightScript syntax, which the repo's own (stock) oxfmt can't parse
+    "apps/oxlint/test/fixtures/tightscript_visit/files/**",
     "**/dist/**",
     "**/generated/**",
     "**/CHANGELOG.md",

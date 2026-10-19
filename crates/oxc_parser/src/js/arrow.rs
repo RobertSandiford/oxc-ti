@@ -190,6 +190,34 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     // <const Ident extends Ident>
                     //  ^^^^^ Optional
                     self.bump(Kind::Const);
+                    // TightScript: skip `[lazy] deep PERM` in `<lazy deep rwd T,>`.
+                    if self.at(Kind::Ident)
+                        && self.cur_src() == "lazy"
+                        && self.lookahead(Self::is_start_of_lazy_type_parameter_permission)
+                    {
+                        self.bump_any();
+                    }
+                    if self.at(Kind::Ident)
+                        && self.cur_src() == "deep"
+                        && self.lookahead(Self::is_start_of_type_parameter_permission)
+                    {
+                        self.bump_any();
+                        self.bump_any();
+                    }
+                    // TightScript: `<owned T,>`, `<exact? const T,>`: hints and the modifiers among them.
+                    while self.at(Kind::Ident)
+                        && matches!(self.cur_src(), "owned" | "exact")
+                        && self.lookahead(Self::is_type_parameter_hints_then_name)
+                    {
+                        let is_exact = self.cur_src() == "exact";
+                        self.bump_any();
+                        if is_exact {
+                            self.bump(Kind::Question);
+                        }
+                        while matches!(self.cur_kind(), Kind::Const | Kind::In | Kind::Out) {
+                            self.bump_any();
+                        }
+                    }
                     self.bump_any();
                     let third = self.cur_kind();
                     return match third {
@@ -288,7 +316,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.error(diagnostics::ts_arrow_function_this_parameter(this_param.span));
         }
 
-        let return_type = if self.is_ts { self.parse_ts_return_type_annotation() } else { None };
+        let return_type =
+            if self.is_ts { self.parse_ts_return_type_annotation(false) } else { None };
 
         self.ctx = self.ctx.and_await(has_await);
 

@@ -366,7 +366,9 @@ impl NoShadow {
             declaration_or_parent_id(ctx, ctx.scoping().symbol_declaration(symbol_id));
         matches!(
             ctx.nodes().kind(declaration_id),
-            AstKind::TSInterfaceDeclaration(_) | AstKind::TSTypeAliasDeclaration(_)
+            AstKind::TSInterfaceDeclaration(_)
+                | AstKind::TSTypeAliasDeclaration(_)
+                | AstKind::TSTypeFromDeclaration(_)
         )
     }
 

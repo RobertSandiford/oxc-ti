@@ -1,0 +1,25 @@
+type P1 = read   { a: string };
+type P2 = rw {a:string};
+type P3 = readwritedelete string[];
+type P4 = lazy   -write { a: string };
+type P5 = +d Foo;
+type P6 = none { a: string } | all { b: string };
+type P7 = =rw Foo;
+type P8 = r [string];
+type P9 = deep exact { a: { b: string } };
+
+type O1 = owned rw { a: string };
+type O1b = keyof rw Foo;
+type O2 = -owned O1;
+type O3 = -exact O2;
+type O4 = exact (a: string) => string;
+declare function keeps(x: transient { a: string }): void;
+
+const as1 = v as deep rw;
+const as2 = v as exact { a: string };
+
+function retR(): r { return "x"; }
+function retLiteral(): r { a: string } { return { a: "x" }; }
+
+type UsesR = r[];
+type Union = read | T;

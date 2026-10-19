@@ -332,6 +332,14 @@ impl<'a> ReplaceWith<'a> for TSLiteral<'a> {}
 
 impl<'a> ReplaceWith<'a> for TSType<'a> {}
 
+impl<'a> ReplaceWith<'a> for TSDistributeType<'a> {}
+
+impl<'a> ReplaceWith<'a> for TSTypeReturn<'a> {}
+
+impl<'a> ReplaceWith<'a> for TSProvideDeclaration<'a> {}
+
+impl<'a> ReplaceWith<'a> for TSTypeFromDeclaration<'a> {}
+
 impl<'a> ReplaceWith<'a> for TSConditionalType<'a> {}
 
 impl<'a> ReplaceWith<'a> for TSUnionType<'a> {}

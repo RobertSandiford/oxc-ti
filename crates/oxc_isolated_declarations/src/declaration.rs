@@ -12,7 +12,7 @@ use crate::{
     diagnostics::{
         accessor_must_have_explicit_return_type, binding_element_export,
         inferred_type_of_expression, signature_computed_property_name,
-        variable_must_have_explicit_type,
+        type_from_needs_type_checker, variable_must_have_explicit_type,
     },
 };
 
@@ -243,6 +243,14 @@ impl<'a> IsolatedDeclarations<'a> {
                     None
                 }
             }
+            // The alias would be `type R = <type of the next statement>`, which needs the checker.
+            Declaration::TSTypeFromDeclaration(decl) => {
+                if !check_binding || self.scope.has_reference(decl.id.name) {
+                    self.error(type_from_needs_type_checker(decl.span));
+                }
+                None
+            }
+            Declaration::TSProvideDeclaration(_) => None,
         }
     }
 

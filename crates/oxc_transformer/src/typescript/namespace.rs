@@ -273,7 +273,9 @@ impl<'a> TypeScriptNamespace {
                         }
                         Declaration::TSTypeAliasDeclaration(_)
                         | Declaration::TSInterfaceDeclaration(_)
-                        | Declaration::TSGlobalDeclaration(_) => {}
+                        | Declaration::TSGlobalDeclaration(_)
+                        | Declaration::TSProvideDeclaration(_)
+                        | Declaration::TSTypeFromDeclaration(_) => {}
                     }
                 }
                 _ => new_stmts.push(stmt),

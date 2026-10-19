@@ -5,6 +5,7 @@ pub mod esbuild;
 pub mod js;
 #[cfg(feature = "sourcemap")]
 pub mod sourcemap;
+pub mod tightscript;
 pub mod ts;
 
 mod tester;

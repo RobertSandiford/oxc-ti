@@ -152,6 +152,7 @@ impl NoUnusedVars {
             | AstKind::TSMappedType(_)
             | AstKind::TSNamespaceDeclaration(_)
             | AstKind::TSTypeAliasDeclaration(_)
+            | AstKind::TSTypeFromDeclaration(_)
             | AstKind::TSTypeParameter(_) => self.is_ignored_var(declared_binding),
             AstKind::Function(func) => {
                 // Functions with TypeScript syntax are ignored only if they are truly ambient

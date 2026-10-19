@@ -1013,6 +1013,46 @@ parser_diagnostics! {
             .with_label(span)
     };
 
+    permission_modifier_not_on_property(span: Span) => {
+        ts_error("12109", "Permission modifiers can only be used on properties, index signatures and named tuple members.")
+            .with_label(span)
+    };
+
+    function_type_body_needs_parameter_list(span: Span) => {
+        ts_error("12252", "A function with a body needs a parameter list after its type annotation.")
+            .with_label(span)
+    };
+
+    type_from_type_parameters(span: Span) => {
+        OxcDiagnostic::error("`type Name from` can't have type parameters.").with_label(span)
+    };
+
+    distribute_takes_one_source(span: Span) => {
+        OxcDiagnostic::error("`distribute` takes one source type. Nest `distribute` to distribute over several.")
+            .with_label(span)
+    };
+
+    // TightScript: TS1243 and TS1029 with a permission word, which isn't a `ModifierKind`.
+    modifier_word_cannot_be_used_with(span: Span, modifier: &'a str, other: &'a str) => {
+        ts_error("1243", format!("'{modifier}' modifier cannot be used with '{other}' modifier."))
+            .with_label(span)
+    };
+
+    provide_type_without_definition(span: Span, name: &'a str, provided: &'a str) => {
+        ts_error(
+            "12018",
+            format!(
+                "Type definition expected, as in 'provide type {name} = ...'. To provide '{provided}', write 'provide {provided}'."
+            ),
+        )
+        .with_label(span)
+    };
+
+    modifier_must_precede_word(span: Span, modifier: ModifierKind, other: &'a str) => {
+        ts_error("1029", format!("'{modifier}' modifier must precede '{other}' modifier."))
+            .with_label(span)
+    };
+
     accessibility_modifier_on_private_property(modifier: Modifier, _allowed: Option<ModifierKinds>) => {
         ts_error("18010", "An accessibility modifier cannot be used with a private identifier.")
             .with_label(modifier.span())

@@ -2685,6 +2685,10 @@ function constructStatement(pos, ast) {
       return constructBoxTSGlobalDeclaration(pos + 8, ast);
     case 41:
       return constructBoxTSImportEqualsDeclaration(pos + 8, ast);
+    case 42:
+      return constructBoxTSProvideDeclaration(pos + 8, ast);
+    case 43:
+      return constructBoxTSTypeFromDeclaration(pos + 8, ast);
     case 64:
       return constructBoxImportDeclaration(pos + 8, ast);
     case 65:
@@ -2878,6 +2882,10 @@ function constructDeclaration(pos, ast) {
       return constructBoxTSGlobalDeclaration(pos + 8, ast);
     case 41:
       return constructBoxTSImportEqualsDeclaration(pos + 8, ast);
+    case 42:
+      return constructBoxTSProvideDeclaration(pos + 8, ast);
+    case 43:
+      return constructBoxTSTypeFromDeclaration(pos + 8, ast);
     default:
       throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for Declaration`);
   }
@@ -8257,10 +8265,228 @@ function constructTSType(pos, ast) {
       return constructBoxJSDocNonNullableType(pos + 8, ast);
     case 37:
       return constructBoxJSDocUnknownType(pos + 8, ast);
+    case 38:
+      return constructBoxTSDistributeType(pos + 8, ast);
+    case 39:
+      return constructBoxTSTypeReturn(pos + 8, ast);
     default:
       throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for TSType`);
   }
 }
+
+export class TSDistributeType {
+  type = "TSDistributeType";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructI32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructI32(internal.pos + 4, internal.ast);
+  }
+
+  get source() {
+    const internal = this.#internal;
+    return constructTSType(internal.pos + 16, internal.ast);
+  }
+
+  get member() {
+    const internal = this.#internal;
+    return constructOptionBoxTSTypeParameter(internal.pos + 32, internal.ast);
+  }
+
+  get body() {
+    const internal = this.#internal;
+    return constructTSType(internal.pos + 40, internal.ast);
+  }
+
+  toJSON() {
+    return {
+      type: "TSDistributeType",
+      start: this.start,
+      end: this.end,
+      source: this.source,
+      member: this.member,
+      body: this.body,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugTSDistributeType.prototype);
+  }
+}
+
+const DebugTSDistributeType = class TSDistributeType {};
+
+export class TSTypeReturn {
+  type = "TSTypeReturn";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructI32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructI32(internal.pos + 4, internal.ast);
+  }
+
+  get valueType() {
+    const internal = this.#internal;
+    return constructOptionTSType(internal.pos + 16, internal.ast);
+  }
+
+  get typeAnnotation() {
+    const internal = this.#internal;
+    return constructTSType(internal.pos + 32, internal.ast);
+  }
+
+  toJSON() {
+    return {
+      type: "TSTypeReturn",
+      start: this.start,
+      end: this.end,
+      valueType: this.valueType,
+      typeAnnotation: this.typeAnnotation,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugTSTypeReturn.prototype);
+  }
+}
+
+const DebugTSTypeReturn = class TSTypeReturn {};
+
+export class TSProvideDeclaration {
+  type = "TSProvideDeclaration";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructI32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructI32(internal.pos + 4, internal.ast);
+  }
+
+  get typeAnnotation() {
+    const internal = this.#internal;
+    return constructOptionTSType(internal.pos + 16, internal.ast);
+  }
+
+  get typeAlias() {
+    const internal = this.#internal;
+    return constructOptionBoxTSTypeAliasDeclaration(internal.pos + 32, internal.ast);
+  }
+
+  get typeFrom() {
+    const internal = this.#internal;
+    return constructOptionBoxTSTypeFromDeclaration(internal.pos + 40, internal.ast);
+  }
+
+  toJSON() {
+    return {
+      type: "TSProvideDeclaration",
+      start: this.start,
+      end: this.end,
+      typeAnnotation: this.typeAnnotation,
+      typeAlias: this.typeAlias,
+      typeFrom: this.typeFrom,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugTSProvideDeclaration.prototype);
+  }
+}
+
+const DebugTSProvideDeclaration = class TSProvideDeclaration {};
+
+export class TSTypeFromDeclaration {
+  type = "TSTypeFromDeclaration";
+  #internal;
+
+  constructor(pos, ast) {
+    if (ast?.token !== TOKEN) constructorError();
+
+    const { nodes } = ast;
+    const cached = nodes.get(pos);
+    if (cached !== void 0) return cached;
+
+    this.#internal = { pos, ast };
+    nodes.set(pos, this);
+  }
+
+  get start() {
+    const internal = this.#internal;
+    return constructI32(internal.pos, internal.ast);
+  }
+
+  get end() {
+    const internal = this.#internal;
+    return constructI32(internal.pos + 4, internal.ast);
+  }
+
+  get id() {
+    const internal = this.#internal;
+    return new BindingIdentifier(internal.pos + 16, internal.ast);
+  }
+
+  toJSON() {
+    return {
+      type: "TSTypeFromDeclaration",
+      start: this.start,
+      end: this.end,
+      id: this.id,
+    };
+  }
+
+  [inspectSymbol]() {
+    return Object.setPrototypeOf(this.toJSON(), DebugTSTypeFromDeclaration.prototype);
+  }
+}
+
+const DebugTSTypeFromDeclaration = class TSTypeFromDeclaration {};
 
 export class TSConditionalType {
   type = "TSConditionalType";
@@ -8528,8 +8754,61 @@ function constructTSTypeOperatorOperator(pos, ast) {
       return "unique";
     case 2:
       return "readonly";
+    case 3:
+      return "read";
+    case 4:
+      return "write";
+    case 5:
+      return "delete";
+    case 6:
+      return "readWrite";
+    case 7:
+      return "readDelete";
+    case 8:
+      return "writeDelete";
+    case 9:
+      return "readWriteDelete";
+    case 10:
+      return "none";
+    case 11:
+      return "all";
+    case 12:
+      return "r";
+    case 13:
+      return "w";
+    case 14:
+      return "d";
+    case 15:
+      return "rw";
+    case 16:
+      return "rd";
+    case 17:
+      return "wd";
+    case 18:
+      return "rwd";
+    case 19:
+      return "owned";
+    case 20:
+      return "exact";
+    case 21:
+      return "transient";
+    case 22:
+      return "deep";
     default:
       throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for TSTypeOperatorOperator`);
+  }
+}
+
+function constructTSPermissionSign(pos, ast) {
+  switch (ast.buffer[pos]) {
+    case 0:
+      return "plus";
+    case 1:
+      return "minus";
+    case 2:
+      return "equals";
+    default:
+      throw new Error(`Unexpected discriminant ${ast.buffer[pos]} for TSPermissionSign`);
   }
 }
 
@@ -8905,6 +9184,10 @@ function constructTSTupleElement(pos, ast) {
       return constructBoxJSDocNonNullableType(pos + 8, ast);
     case 37:
       return constructBoxJSDocUnknownType(pos + 8, ast);
+    case 38:
+      return constructBoxTSDistributeType(pos + 8, ast);
+    case 39:
+      return constructBoxTSTypeReturn(pos + 8, ast);
     case 64:
       return constructBoxTSOptionalType(pos + 8, ast);
     case 65:
@@ -13409,6 +13692,14 @@ function constructBoxTSImportEqualsDeclaration(pos, ast) {
   return new TSImportEqualsDeclaration(ast.buffer.int32[pos >> 2], ast);
 }
 
+function constructBoxTSProvideDeclaration(pos, ast) {
+  return new TSProvideDeclaration(ast.buffer.int32[pos >> 2], ast);
+}
+
+function constructBoxTSTypeFromDeclaration(pos, ast) {
+  return new TSTypeFromDeclaration(ast.buffer.int32[pos >> 2], ast);
+}
+
 function constructVecVariableDeclarator(pos, ast) {
   const { int32 } = ast.buffer,
     pos32 = pos >> 2;
@@ -13626,6 +13917,11 @@ function constructBoxAccessorProperty(pos, ast) {
 
 function constructBoxTSIndexSignature(pos, ast) {
   return new TSIndexSignature(ast.buffer.int32[pos >> 2], ast);
+}
+
+function constructOptionTSTypeOperatorOperator(pos, ast) {
+  if (ast.buffer[pos] === 255) return null;
+  return constructTSTypeOperatorOperator(pos, ast);
 }
 
 function constructBoxImportDeclaration(pos, ast) {
@@ -13965,10 +14261,47 @@ function constructBoxJSDocUnknownType(pos, ast) {
   return new JSDocUnknownType(ast.buffer.int32[pos >> 2], ast);
 }
 
+function constructBoxTSDistributeType(pos, ast) {
+  return new TSDistributeType(ast.buffer.int32[pos >> 2], ast);
+}
+
+function constructBoxTSTypeReturn(pos, ast) {
+  return new TSTypeReturn(ast.buffer.int32[pos >> 2], ast);
+}
+
+function constructBoxTSTypeParameter(pos, ast) {
+  return new TSTypeParameter(ast.buffer.int32[pos >> 2], ast);
+}
+
+function constructOptionBoxTSTypeParameter(pos, ast) {
+  if (ast.buffer.int32[pos >> 2] === 0 && ast.buffer.int32[(pos >> 2) + 1] === 0) return null;
+  return constructBoxTSTypeParameter(pos, ast);
+}
+
+function constructOptionTSType(pos, ast) {
+  if (ast.buffer[pos] === 255) return null;
+  return constructTSType(pos, ast);
+}
+
+function constructOptionBoxTSTypeAliasDeclaration(pos, ast) {
+  if (ast.buffer.int32[pos >> 2] === 0 && ast.buffer.int32[(pos >> 2) + 1] === 0) return null;
+  return constructBoxTSTypeAliasDeclaration(pos, ast);
+}
+
+function constructOptionBoxTSTypeFromDeclaration(pos, ast) {
+  if (ast.buffer.int32[pos >> 2] === 0 && ast.buffer.int32[(pos >> 2) + 1] === 0) return null;
+  return constructBoxTSTypeFromDeclaration(pos, ast);
+}
+
 function constructVecTSType(pos, ast) {
   const { int32 } = ast.buffer,
     pos32 = pos >> 2;
   return new NodeArray(int32[pos32], int32[pos32 + 2], 16, constructTSType, ast);
+}
+
+function constructOptionTSPermissionSign(pos, ast) {
+  if (ast.buffer[pos] === 255) return null;
+  return constructTSPermissionSign(pos, ast);
 }
 
 function constructVecTSTupleElement(pos, ast) {
@@ -13989,15 +14322,10 @@ function constructBoxTSQualifiedName(pos, ast) {
   return new TSQualifiedName(ast.buffer.int32[pos >> 2], ast);
 }
 
-function constructOptionTSType(pos, ast) {
-  if (ast.buffer[pos] === 255) return null;
-  return constructTSType(pos, ast);
-}
-
 function constructVecTSTypeParameter(pos, ast) {
   const { int32 } = ast.buffer,
     pos32 = pos >> 2;
-  return new NodeArray(int32[pos32], int32[pos32 + 2], 80, constructTSTypeParameter, ast);
+  return new NodeArray(int32[pos32], int32[pos32 + 2], 88, constructTSTypeParameter, ast);
 }
 
 function constructTSTypeParameter(pos, ast) {
@@ -14047,10 +14375,6 @@ function constructBoxTSModuleBlock(pos, ast) {
 function constructOptionBoxTSModuleBlock(pos, ast) {
   if (ast.buffer.int32[pos >> 2] === 0 && ast.buffer.int32[(pos >> 2) + 1] === 0) return null;
   return constructBoxTSModuleBlock(pos, ast);
-}
-
-function constructBoxTSTypeParameter(pos, ast) {
-  return new TSTypeParameter(ast.buffer.int32[pos >> 2], ast);
 }
 
 function constructOptionBoxObjectExpression(pos, ast) {

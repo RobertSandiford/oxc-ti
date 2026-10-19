@@ -1133,8 +1133,10 @@ impl<'a> Declaration<'a> {
             Declaration::TSEnumDeclaration(decl) => Some(&decl.id),
             Declaration::TSImportEqualsDeclaration(decl) => Some(&decl.id),
             Declaration::TSNamespaceDeclaration(decl) => Some(&decl.id),
+            Declaration::TSTypeFromDeclaration(decl) => Some(&decl.id),
             Declaration::TSExternalModuleDeclaration(_)
             | Declaration::TSGlobalDeclaration(_)
+            | Declaration::TSProvideDeclaration(_)
             | Declaration::VariableDeclaration(_) => None,
         }
     }
@@ -1151,13 +1153,22 @@ impl<'a> Declaration<'a> {
             Declaration::TSNamespaceDeclaration(decl) => decl.declare,
             Declaration::TSGlobalDeclaration(decl) => decl.declare,
             Declaration::TSInterfaceDeclaration(decl) => decl.declare,
-            Declaration::TSImportEqualsDeclaration(_) => false,
+            Declaration::TSImportEqualsDeclaration(_)
+            | Declaration::TSProvideDeclaration(_)
+            | Declaration::TSTypeFromDeclaration(_) => false,
         }
     }
 
-    /// Returns `true` if this declaration is a TypeScript type or interface declaration.
+    /// Returns `true` if this declaration is a TypeScript type or interface declaration,
+    /// or one of TightScript's type-only `provide` and `type Name from` declarations.
     pub fn is_type(&self) -> bool {
-        matches!(self, Self::TSTypeAliasDeclaration(_) | Self::TSInterfaceDeclaration(_))
+        matches!(
+            self,
+            Self::TSTypeAliasDeclaration(_)
+                | Self::TSInterfaceDeclaration(_)
+                | Self::TSProvideDeclaration(_)
+                | Self::TSTypeFromDeclaration(_)
+        )
     }
 }
 

@@ -17,6 +17,31 @@ impl<'a> IsolatedDeclarations<'a> {
         func: &Function<'a>,
         declare: Option<bool>,
     ) -> ArenaBox<'a, Function<'a>> {
+        // TightScript: `function f: F (a) {}` declares as `declare function f: F;`, its type saying it all.
+        if let Some(function_type) = &func.params.function_type {
+            let params = FormalParameters::boxed_with_function_type(
+                SPAN,
+                FormalParameterKind::Signature,
+                [],
+                None,
+                function_type.as_ref().clone_in(self.allocator()),
+                self,
+            );
+            return Function::boxed(
+                func.span,
+                func.r#type,
+                func.id.clone_in(self.allocator()),
+                false,
+                false,
+                declare.unwrap_or_else(|| self.is_declare()),
+                None,
+                None,
+                params,
+                None,
+                None,
+                self,
+            );
+        }
         let return_type = self.infer_function_return_type(func);
         if return_type.is_none() {
             self.error(function_must_have_explicit_return_type(get_function_span(func)));
@@ -294,6 +319,8 @@ fn undefined_presence(ts_type: &TSType<'_>) -> UndefinedPresence {
         | TSType::TSTypePredicate(_)
         | TSType::TSTypeQuery(_)
         | TSType::TSTypeReference(_)
+        | TSType::TSDistributeType(_)
+        | TSType::TSTypeReturn(_)
         | TSType::JSDocNullableType(_)
         | TSType::JSDocNonNullableType(_)
         | TSType::JSDocUnknownType(_) => UndefinedPresence::Unresolved,

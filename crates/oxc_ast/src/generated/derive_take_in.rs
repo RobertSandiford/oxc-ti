@@ -334,6 +334,14 @@ impl<'a> TakeIn<'a> for TSLiteral<'a> {}
 
 impl<'a> TakeIn<'a> for TSType<'a> {}
 
+impl<'a> TakeIn<'a> for TSDistributeType<'a> {}
+
+impl<'a> TakeIn<'a> for TSTypeReturn<'a> {}
+
+impl<'a> TakeIn<'a> for TSProvideDeclaration<'a> {}
+
+impl<'a> TakeIn<'a> for TSTypeFromDeclaration<'a> {}
+
 impl<'a> TakeIn<'a> for TSConditionalType<'a> {}
 
 impl<'a> TakeIn<'a> for TSUnionType<'a> {}

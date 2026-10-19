@@ -12,7 +12,8 @@ use crate::{
 };
 
 use super::{
-    GlobSet, LintConfig, LintPlugins, OxlintEnv, OxlintGlobals, categories::OxlintCategories,
+    DisableRuleCommentLocation, GlobSet, LintConfig, LintPlugins, OxlintEnv, OxlintGlobals,
+    categories::OxlintCategories,
 };
 
 // TODO: support `categories` et. al. in overrides.
@@ -391,6 +392,10 @@ impl ConfigStore {
     /// Whether eslint-style disable directives are respected.
     pub fn respect_eslint_disable_directives(&self) -> bool {
         self.base.base.config.options.respect_eslint_disable_directives.unwrap_or(true)
+    }
+
+    pub(crate) fn disable_rule_comment_location(&self) -> DisableRuleCommentLocation {
+        self.base.base.config.options.disable_rule_comment_location.unwrap_or_default()
     }
 
     pub(crate) fn get_related_config(&self, path: &Path) -> &Config {

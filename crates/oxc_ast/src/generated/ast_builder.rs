@@ -8887,6 +8887,48 @@ impl<'a> Statement<'a> {
         ))
     }
 
+    /// Build a [`Statement::TSProvideDeclaration`].
+    ///
+    /// This node contains a [`TSProvideDeclaration`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_annotation`
+    /// * `type_alias`
+    /// * `type_from`
+    #[inline]
+    pub fn new_ts_provide_declaration(
+        span: Span,
+        type_annotation: Option<TSType<'a>>,
+        type_alias: Option<ArenaBox<'a, TSTypeAliasDeclaration<'a>>>,
+        type_from: Option<ArenaBox<'a, TSTypeFromDeclaration<'a>>>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSProvideDeclaration(TSProvideDeclaration::boxed(
+            span,
+            type_annotation,
+            type_alias,
+            type_from,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`Statement::TSTypeFromDeclaration`].
+    ///
+    /// This node contains a [`TSTypeFromDeclaration`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `id`
+    #[inline]
+    pub fn new_ts_type_from_declaration(
+        span: Span,
+        id: BindingIdentifier<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSTypeFromDeclaration(TSTypeFromDeclaration::boxed(span, id, builder.builder()))
+    }
+
     /// Build a [`Statement::ImportDeclaration`].
     ///
     /// This node contains an [`ImportDeclaration`] that will be stored in the memory arena.
@@ -9774,6 +9816,48 @@ impl<'a> Declaration<'a> {
             import_kind,
             builder.builder(),
         ))
+    }
+
+    /// Build a [`Declaration::TSProvideDeclaration`].
+    ///
+    /// This node contains a [`TSProvideDeclaration`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_annotation`
+    /// * `type_alias`
+    /// * `type_from`
+    #[inline]
+    pub fn new_ts_provide_declaration(
+        span: Span,
+        type_annotation: Option<TSType<'a>>,
+        type_alias: Option<ArenaBox<'a, TSTypeAliasDeclaration<'a>>>,
+        type_from: Option<ArenaBox<'a, TSTypeFromDeclaration<'a>>>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSProvideDeclaration(TSProvideDeclaration::boxed(
+            span,
+            type_annotation,
+            type_alias,
+            type_from,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`Declaration::TSTypeFromDeclaration`].
+    ///
+    /// This node contains a [`TSTypeFromDeclaration`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `id`
+    #[inline]
+    pub fn new_ts_type_from_declaration(
+        span: Span,
+        id: BindingIdentifier<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSTypeFromDeclaration(TSTypeFromDeclaration::boxed(span, id, builder.builder()))
     }
 }
 
@@ -13052,6 +13136,7 @@ impl<'a> FormalParameters<'a> {
             kind,
             items: items.into_in(builder.allocator()),
             rest,
+            function_type: Default::default(),
         }
     }
 
@@ -13075,6 +13160,64 @@ impl<'a> FormalParameters<'a> {
     ) -> ArenaBox<'a, Self> {
         let builder = builder.builder();
         ArenaBox::new_in(Self::new(span, kind, items, rest, builder), &builder.allocator())
+    }
+
+    /// Build a [`FormalParameters`] with `function_type`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`FormalParameters::boxed_with_function_type`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `kind`
+    /// * `items`
+    /// * `rest`
+    /// * `function_type`: TightScript: the type of the function these parameters belong to, `F` in `function f: F (a) {}`.
+    #[inline]
+    pub fn new_with_function_type(
+        span: Span,
+        kind: FormalParameterKind,
+        items: impl IntoIn<'a, ArenaVec<'a, FormalParameter<'a>>>,
+        rest: Option<ArenaBox<'a, FormalParameterRest<'a>>>,
+        function_type: TSTypeAnnotation<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        FormalParameters {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            kind,
+            items: items.into_in(builder.allocator()),
+            rest,
+            function_type: Some(ArenaBox::new_in(function_type, &builder.allocator())),
+        }
+    }
+
+    /// Build a [`FormalParameters`] with `function_type`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`FormalParameters::new_with_function_type`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `kind`
+    /// * `items`
+    /// * `rest`
+    /// * `function_type`: TightScript: the type of the function these parameters belong to, `F` in `function f: F (a) {}`.
+    #[inline]
+    pub fn boxed_with_function_type(
+        span: Span,
+        kind: FormalParameterKind,
+        items: impl IntoIn<'a, ArenaVec<'a, FormalParameter<'a>>>,
+        rest: Option<ArenaBox<'a, FormalParameterRest<'a>>>,
+        function_type: TSTypeAnnotation<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_function_type(span, kind, items, rest, function_type, builder),
+            &builder.allocator(),
+        )
     }
 }
 
@@ -15020,6 +15163,65 @@ impl<'a> ClassElement<'a> {
         ))
     }
 
+    /// Build a [`ClassElement::PropertyDefinition`] with `permission`.
+    ///
+    /// This node contains a [`PropertyDefinition`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators applied to the property.
+    /// * `key`: The expression used to declare the property.
+    /// * `type_annotation`: Type annotation on the property.
+    /// * `value`: Initialized value in the declaration.
+    /// * `computed`: Property was declared with a computed key
+    /// * `static`: Property was declared with a `static` modifier
+    /// * `declare`: Property is declared with a `declare` modifier.
+    /// * `override`
+    /// * `optional`: `true` when created with an optional modifier (`?`)
+    /// * `definite`
+    /// * `readonly`: `true` when declared with a `readonly` modifier
+    /// * `accessibility`: Accessibility modifier.
+    /// * `permission`: TightScript permission modifier, as in `rw x = 1`. Always a permission variant.
+    #[inline]
+    pub fn new_property_definition_with_permission(
+        span: Span,
+        r#type: PropertyDefinitionType,
+        decorators: impl IntoIn<'a, ArenaVec<'a, Decorator<'a>>>,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        value: Option<Expression<'a>>,
+        computed: bool,
+        r#static: bool,
+        declare: bool,
+        r#override: bool,
+        optional: bool,
+        definite: bool,
+        readonly: bool,
+        accessibility: Option<TSAccessibility>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::PropertyDefinition(PropertyDefinition::boxed_with_permission(
+            span,
+            r#type,
+            decorators,
+            key,
+            type_annotation,
+            value,
+            computed,
+            r#static,
+            declare,
+            r#override,
+            optional,
+            definite,
+            readonly,
+            accessibility,
+            permission,
+            builder.builder(),
+        ))
+    }
+
     /// Build a [`ClassElement::AccessorProperty`].
     ///
     /// This node contains an [`AccessorProperty`] that will be stored in the memory arena.
@@ -15067,6 +15269,56 @@ impl<'a> ClassElement<'a> {
         ))
     }
 
+    /// Build a [`ClassElement::AccessorProperty`] with `permission`.
+    ///
+    /// This node contains an [`AccessorProperty`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators applied to the accessor property.
+    /// * `key`: The expression used to declare the property.
+    /// * `type_annotation`: Type annotation on the property.
+    /// * `value`: Initialized value in the declaration, if present.
+    /// * `computed`: Property was declared with a computed key
+    /// * `static`: Property was declared with a `static` modifier
+    /// * `override`: Property was declared with a `override` modifier
+    /// * `definite`: Property has a `!` after its key.
+    /// * `accessibility`: Accessibility modifier.
+    /// * `permission`: TightScript permission modifier, as in `accessor rw x`. Always a permission variant.
+    #[inline]
+    pub fn new_accessor_property_with_permission(
+        span: Span,
+        r#type: AccessorPropertyType,
+        decorators: impl IntoIn<'a, ArenaVec<'a, Decorator<'a>>>,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        value: Option<Expression<'a>>,
+        computed: bool,
+        r#static: bool,
+        r#override: bool,
+        definite: bool,
+        accessibility: Option<TSAccessibility>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::AccessorProperty(AccessorProperty::boxed_with_permission(
+            span,
+            r#type,
+            decorators,
+            key,
+            type_annotation,
+            value,
+            computed,
+            r#static,
+            r#override,
+            definite,
+            accessibility,
+            permission,
+            builder.builder(),
+        ))
+    }
+
     /// Build a [`ClassElement::TSIndexSignature`].
     ///
     /// This node contains a [`TSIndexSignature`] that will be stored in the memory arena.
@@ -15092,6 +15344,38 @@ impl<'a> ClassElement<'a> {
             type_annotation,
             readonly,
             r#static,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`ClassElement::TSIndexSignature`] with `permission`.
+    ///
+    /// This node contains a [`TSIndexSignature`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter`
+    /// * `type_annotation`
+    /// * `readonly`
+    /// * `static`
+    /// * `permission`: TightScript permission modifier, as in `{ read [key: string]: T }`. Always a permission variant.
+    #[inline]
+    pub fn new_ts_index_signature_with_permission(
+        span: Span,
+        parameter: TSIndexSignatureName<'a>,
+        type_annotation: ArenaBox<'a, TSTypeAnnotation<'a>>,
+        readonly: bool,
+        r#static: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSIndexSignature(TSIndexSignature::boxed_with_permission(
+            span,
+            parameter,
+            type_annotation,
+            readonly,
+            r#static,
+            permission,
             builder.builder(),
         ))
     }
@@ -15256,6 +15540,7 @@ impl<'a> PropertyDefinition<'a> {
             definite,
             readonly,
             accessibility,
+            permission: Default::default(),
         }
     }
 
@@ -15314,6 +15599,131 @@ impl<'a> PropertyDefinition<'a> {
                 definite,
                 readonly,
                 accessibility,
+                builder,
+            ),
+            &builder.allocator(),
+        )
+    }
+
+    /// Build a [`PropertyDefinition`] with `permission`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`PropertyDefinition::boxed_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators applied to the property.
+    /// * `key`: The expression used to declare the property.
+    /// * `type_annotation`: Type annotation on the property.
+    /// * `value`: Initialized value in the declaration.
+    /// * `computed`: Property was declared with a computed key
+    /// * `static`: Property was declared with a `static` modifier
+    /// * `declare`: Property is declared with a `declare` modifier.
+    /// * `override`
+    /// * `optional`: `true` when created with an optional modifier (`?`)
+    /// * `definite`
+    /// * `readonly`: `true` when declared with a `readonly` modifier
+    /// * `accessibility`: Accessibility modifier.
+    /// * `permission`: TightScript permission modifier, as in `rw x = 1`. Always a permission variant.
+    #[inline]
+    pub fn new_with_permission(
+        span: Span,
+        r#type: PropertyDefinitionType,
+        decorators: impl IntoIn<'a, ArenaVec<'a, Decorator<'a>>>,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        value: Option<Expression<'a>>,
+        computed: bool,
+        r#static: bool,
+        declare: bool,
+        r#override: bool,
+        optional: bool,
+        definite: bool,
+        readonly: bool,
+        accessibility: Option<TSAccessibility>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        PropertyDefinition {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            r#type,
+            decorators: decorators.into_in(builder.allocator()),
+            key,
+            type_annotation,
+            value,
+            computed,
+            r#static,
+            declare,
+            r#override,
+            optional,
+            definite,
+            readonly,
+            accessibility,
+            permission: Some(permission),
+        }
+    }
+
+    /// Build a [`PropertyDefinition`] with `permission`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`PropertyDefinition::new_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators applied to the property.
+    /// * `key`: The expression used to declare the property.
+    /// * `type_annotation`: Type annotation on the property.
+    /// * `value`: Initialized value in the declaration.
+    /// * `computed`: Property was declared with a computed key
+    /// * `static`: Property was declared with a `static` modifier
+    /// * `declare`: Property is declared with a `declare` modifier.
+    /// * `override`
+    /// * `optional`: `true` when created with an optional modifier (`?`)
+    /// * `definite`
+    /// * `readonly`: `true` when declared with a `readonly` modifier
+    /// * `accessibility`: Accessibility modifier.
+    /// * `permission`: TightScript permission modifier, as in `rw x = 1`. Always a permission variant.
+    #[inline]
+    pub fn boxed_with_permission(
+        span: Span,
+        r#type: PropertyDefinitionType,
+        decorators: impl IntoIn<'a, ArenaVec<'a, Decorator<'a>>>,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        value: Option<Expression<'a>>,
+        computed: bool,
+        r#static: bool,
+        declare: bool,
+        r#override: bool,
+        optional: bool,
+        definite: bool,
+        readonly: bool,
+        accessibility: Option<TSAccessibility>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_permission(
+                span,
+                r#type,
+                decorators,
+                key,
+                type_annotation,
+                value,
+                computed,
+                r#static,
+                declare,
+                r#override,
+                optional,
+                definite,
+                readonly,
+                accessibility,
+                permission,
                 builder,
             ),
             &builder.allocator(),
@@ -15680,6 +16090,7 @@ impl<'a> AccessorProperty<'a> {
             r#override,
             definite,
             accessibility,
+            permission: Default::default(),
         }
     }
 
@@ -15729,6 +16140,113 @@ impl<'a> AccessorProperty<'a> {
                 r#override,
                 definite,
                 accessibility,
+                builder,
+            ),
+            &builder.allocator(),
+        )
+    }
+
+    /// Build an [`AccessorProperty`] with `permission`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`AccessorProperty::boxed_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators applied to the accessor property.
+    /// * `key`: The expression used to declare the property.
+    /// * `type_annotation`: Type annotation on the property.
+    /// * `value`: Initialized value in the declaration, if present.
+    /// * `computed`: Property was declared with a computed key
+    /// * `static`: Property was declared with a `static` modifier
+    /// * `override`: Property was declared with a `override` modifier
+    /// * `definite`: Property has a `!` after its key.
+    /// * `accessibility`: Accessibility modifier.
+    /// * `permission`: TightScript permission modifier, as in `accessor rw x`. Always a permission variant.
+    #[inline]
+    pub fn new_with_permission(
+        span: Span,
+        r#type: AccessorPropertyType,
+        decorators: impl IntoIn<'a, ArenaVec<'a, Decorator<'a>>>,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        value: Option<Expression<'a>>,
+        computed: bool,
+        r#static: bool,
+        r#override: bool,
+        definite: bool,
+        accessibility: Option<TSAccessibility>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        AccessorProperty {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            r#type,
+            decorators: decorators.into_in(builder.allocator()),
+            key,
+            type_annotation,
+            value,
+            computed,
+            r#static,
+            r#override,
+            definite,
+            accessibility,
+            permission: Some(permission),
+        }
+    }
+
+    /// Build an [`AccessorProperty`] with `permission`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`AccessorProperty::new_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type`
+    /// * `decorators`: Decorators applied to the accessor property.
+    /// * `key`: The expression used to declare the property.
+    /// * `type_annotation`: Type annotation on the property.
+    /// * `value`: Initialized value in the declaration, if present.
+    /// * `computed`: Property was declared with a computed key
+    /// * `static`: Property was declared with a `static` modifier
+    /// * `override`: Property was declared with a `override` modifier
+    /// * `definite`: Property has a `!` after its key.
+    /// * `accessibility`: Accessibility modifier.
+    /// * `permission`: TightScript permission modifier, as in `accessor rw x`. Always a permission variant.
+    #[inline]
+    pub fn boxed_with_permission(
+        span: Span,
+        r#type: AccessorPropertyType,
+        decorators: impl IntoIn<'a, ArenaVec<'a, Decorator<'a>>>,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        value: Option<Expression<'a>>,
+        computed: bool,
+        r#static: bool,
+        r#override: bool,
+        definite: bool,
+        accessibility: Option<TSAccessibility>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_permission(
+                span,
+                r#type,
+                decorators,
+                key,
+                type_annotation,
+                value,
+                computed,
+                r#static,
+                r#override,
+                definite,
+                accessibility,
+                permission,
                 builder,
             ),
             &builder.allocator(),
@@ -21304,7 +21822,7 @@ impl<'a> TSType<'a> {
         ))
     }
 
-    /// Build a [`TSType::TSMappedType`] with `scope_id`.
+    /// Build a [`TSType::TSMappedType`] with `permission` and `permission_sign` and `scope_id`.
     ///
     /// This node contains a [`TSMappedType`] that will be stored in the memory arena.
     ///
@@ -21316,9 +21834,11 @@ impl<'a> TSType<'a> {
     /// * `type_annotation`
     /// * `optional`: Optional modifier on type annotation
     /// * `readonly`: Readonly modifier before keyed index signature
+    /// * `permission`: TightScript permission modifier before the key, as in `{ -write [K in keyof T]: T[K] }`.
+    /// * `permission_sign`: TightScript: `+` or `-` before [`TSMappedType::permission`].
     /// * `scope_id`
     #[inline]
-    pub fn new_ts_mapped_type_with_scope_id(
+    pub fn new_ts_mapped_type_with_permission_and_permission_sign_and_scope_id(
         span: Span,
         key: BindingIdentifier<'a>,
         constraint: TSType<'a>,
@@ -21326,10 +21846,12 @@ impl<'a> TSType<'a> {
         type_annotation: Option<TSType<'a>>,
         optional: Option<TSMappedTypeModifierOperator>,
         readonly: Option<TSMappedTypeModifierOperator>,
+        permission: TSTypeOperatorOperator,
+        permission_sign: TSPermissionSign,
         scope_id: ScopeId,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
-        Self::TSMappedType(TSMappedType::boxed_with_scope_id(
+        Self::TSMappedType(TSMappedType::boxed_with_permission_and_permission_sign_and_scope_id(
             span,
             key,
             constraint,
@@ -21337,6 +21859,8 @@ impl<'a> TSType<'a> {
             type_annotation,
             optional,
             readonly,
+            permission,
+            permission_sign,
             scope_id,
             builder.builder(),
         ))
@@ -21364,6 +21888,35 @@ impl<'a> TSType<'a> {
             label,
             element_type,
             optional,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSType::TSNamedTupleMember`] with `permission`.
+    ///
+    /// This node contains a [`TSNamedTupleMember`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `label`
+    /// * `element_type`
+    /// * `optional`
+    /// * `permission`: TightScript permission modifier, as in `[read a: string]`. Always a permission variant.
+    #[inline]
+    pub fn new_ts_named_tuple_member_with_permission(
+        span: Span,
+        label: IdentifierName<'a>,
+        element_type: TSTupleElement<'a>,
+        optional: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSNamedTupleMember(TSNamedTupleMember::boxed_with_permission(
+            span,
+            label,
+            element_type,
+            optional,
+            permission,
             builder.builder(),
         ))
     }
@@ -21441,17 +21994,23 @@ impl<'a> TSType<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `operator`
+    /// * `lazy`: TightScript: `lazy` before a permission, as in `lazy read T`.
+    /// * `sign`: TightScript: the sign before a permission or `owned`/`exact`, as in `+rw T` or `-exact T`.
     /// * `type_annotation`: The type being operated on
     #[inline]
     pub fn new_ts_type_operator_type(
         span: Span,
         operator: TSTypeOperatorOperator,
+        lazy: bool,
+        sign: Option<TSPermissionSign>,
         type_annotation: TSType<'a>,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeOperatorType(TSTypeOperator::boxed(
             span,
             operator,
+            lazy,
+            sign,
             type_annotation,
             builder.builder(),
         ))
@@ -21479,6 +22038,35 @@ impl<'a> TSType<'a> {
             parameter_name,
             asserts,
             type_annotation,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSType::TSTypePredicate`] with `soft`.
+    ///
+    /// This node contains a [`TSTypePredicate`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter_name`: The identifier the predicate operates on
+    /// * `asserts`: Does this predicate include an `asserts` modifier?
+    /// * `type_annotation`
+    /// * `soft`: TightScript: a soft type guard, `x is? T`.
+    #[inline]
+    pub fn new_ts_type_predicate_with_soft(
+        span: Span,
+        parameter_name: TSTypePredicateName<'a>,
+        asserts: bool,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        soft: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSTypePredicate(TSTypePredicate::boxed_with_soft(
+            span,
+            parameter_name,
+            asserts,
+            type_annotation,
+            soft,
             builder.builder(),
         ))
     }
@@ -21615,6 +22203,329 @@ impl<'a> TSType<'a> {
     #[inline]
     pub fn new_js_doc_unknown_type(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
         Self::JSDocUnknownType(JSDocUnknownType::boxed(span, builder.builder()))
+    }
+
+    /// Build a [`TSType::TSDistributeType`].
+    ///
+    /// This node contains a [`TSDistributeType`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    #[inline]
+    pub fn new_ts_distribute_type(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSDistributeType(TSDistributeType::boxed(
+            span,
+            source,
+            member,
+            body,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSType::TSDistributeType`] with `scope_id`.
+    ///
+    /// This node contains a [`TSDistributeType`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    /// * `scope_id`
+    #[inline]
+    pub fn new_ts_distribute_type_with_scope_id(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        scope_id: ScopeId,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSDistributeType(TSDistributeType::boxed_with_scope_id(
+            span,
+            source,
+            member,
+            body,
+            scope_id,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSType::TSTypeReturn`].
+    ///
+    /// This node contains a [`TSTypeReturn`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `value_type`: The ordinary return type before `and`, if any.
+    /// * `type_annotation`: The type that is returned.
+    #[inline]
+    pub fn new_ts_type_return(
+        span: Span,
+        value_type: Option<TSType<'a>>,
+        type_annotation: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSTypeReturn(TSTypeReturn::boxed(
+            span,
+            value_type,
+            type_annotation,
+            builder.builder(),
+        ))
+    }
+}
+
+impl<'a> TSDistributeType<'a> {
+    /// Build a [`TSDistributeType`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSDistributeType::boxed`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    #[inline]
+    pub fn new(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSDistributeType {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            source,
+            member,
+            body,
+            scope_id: Default::default(),
+        }
+    }
+
+    /// Build a [`TSDistributeType`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSDistributeType::new`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    #[inline]
+    pub fn boxed(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(Self::new(span, source, member, body, builder), &builder.allocator())
+    }
+
+    /// Build a [`TSDistributeType`] with `scope_id`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSDistributeType::boxed_with_scope_id`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    /// * `scope_id`
+    #[inline]
+    pub fn new_with_scope_id(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        scope_id: ScopeId,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSDistributeType {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            source,
+            member,
+            body,
+            scope_id: Cell::new(Some(scope_id)),
+        }
+    }
+
+    /// Build a [`TSDistributeType`] with `scope_id`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSDistributeType::new_with_scope_id`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    /// * `scope_id`
+    #[inline]
+    pub fn boxed_with_scope_id(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        scope_id: ScopeId,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_scope_id(span, source, member, body, scope_id, builder),
+            &builder.allocator(),
+        )
+    }
+}
+
+impl<'a> TSTypeReturn<'a> {
+    /// Build a [`TSTypeReturn`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSTypeReturn::boxed`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `value_type`: The ordinary return type before `and`, if any.
+    /// * `type_annotation`: The type that is returned.
+    #[inline]
+    pub fn new(
+        span: Span,
+        value_type: Option<TSType<'a>>,
+        type_annotation: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSTypeReturn { node_id: Cell::new(builder.node_id()), span, value_type, type_annotation }
+    }
+
+    /// Build a [`TSTypeReturn`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSTypeReturn::new`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `value_type`: The ordinary return type before `and`, if any.
+    /// * `type_annotation`: The type that is returned.
+    #[inline]
+    pub fn boxed(
+        span: Span,
+        value_type: Option<TSType<'a>>,
+        type_annotation: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new(span, value_type, type_annotation, builder),
+            &builder.allocator(),
+        )
+    }
+}
+
+impl<'a> TSProvideDeclaration<'a> {
+    /// Build a [`TSProvideDeclaration`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSProvideDeclaration::boxed`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_annotation`
+    /// * `type_alias`
+    /// * `type_from`
+    #[inline]
+    pub fn new(
+        span: Span,
+        type_annotation: Option<TSType<'a>>,
+        type_alias: Option<ArenaBox<'a, TSTypeAliasDeclaration<'a>>>,
+        type_from: Option<ArenaBox<'a, TSTypeFromDeclaration<'a>>>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSProvideDeclaration {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            type_annotation,
+            type_alias,
+            type_from,
+        }
+    }
+
+    /// Build a [`TSProvideDeclaration`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSProvideDeclaration::new`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_annotation`
+    /// * `type_alias`
+    /// * `type_from`
+    #[inline]
+    pub fn boxed(
+        span: Span,
+        type_annotation: Option<TSType<'a>>,
+        type_alias: Option<ArenaBox<'a, TSTypeAliasDeclaration<'a>>>,
+        type_from: Option<ArenaBox<'a, TSTypeFromDeclaration<'a>>>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new(span, type_annotation, type_alias, type_from, builder),
+            &builder.allocator(),
+        )
+    }
+}
+
+impl<'a> TSTypeFromDeclaration<'a> {
+    /// Build a [`TSTypeFromDeclaration`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSTypeFromDeclaration::boxed`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `id`
+    #[inline]
+    pub fn new(span: Span, id: BindingIdentifier<'a>, builder: &impl GetAstBuilder<'a>) -> Self {
+        let builder = builder.builder();
+        TSTypeFromDeclaration { node_id: Cell::new(builder.node_id()), span, id }
+    }
+
+    /// Build a [`TSTypeFromDeclaration`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSTypeFromDeclaration::new`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `id`
+    #[inline]
+    pub fn boxed(
+        span: Span,
+        id: BindingIdentifier<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(Self::new(span, id, builder), &builder.allocator())
     }
 }
 
@@ -21877,16 +22788,27 @@ impl<'a> TSTypeOperator<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `operator`
+    /// * `lazy`: TightScript: `lazy` before a permission, as in `lazy read T`.
+    /// * `sign`: TightScript: the sign before a permission or `owned`/`exact`, as in `+rw T` or `-exact T`.
     /// * `type_annotation`: The type being operated on
     #[inline]
     pub fn new(
         span: Span,
         operator: TSTypeOperatorOperator,
+        lazy: bool,
+        sign: Option<TSPermissionSign>,
         type_annotation: TSType<'a>,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         let builder = builder.builder();
-        TSTypeOperator { node_id: Cell::new(builder.node_id()), span, operator, type_annotation }
+        TSTypeOperator {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            operator,
+            lazy,
+            sign,
+            type_annotation,
+        }
     }
 
     /// Build a [`TSTypeOperator`], and store it in the memory arena.
@@ -21897,16 +22819,23 @@ impl<'a> TSTypeOperator<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `operator`
+    /// * `lazy`: TightScript: `lazy` before a permission, as in `lazy read T`.
+    /// * `sign`: TightScript: the sign before a permission or `owned`/`exact`, as in `+rw T` or `-exact T`.
     /// * `type_annotation`: The type being operated on
     #[inline]
     pub fn boxed(
         span: Span,
         operator: TSTypeOperatorOperator,
+        lazy: bool,
+        sign: Option<TSPermissionSign>,
         type_annotation: TSType<'a>,
         builder: &impl GetAstBuilder<'a>,
     ) -> ArenaBox<'a, Self> {
         let builder = builder.builder();
-        ArenaBox::new_in(Self::new(span, operator, type_annotation, builder), &builder.allocator())
+        ArenaBox::new_in(
+            Self::new(span, operator, lazy, sign, type_annotation, builder),
+            &builder.allocator(),
+        )
     }
 }
 
@@ -22054,6 +22983,7 @@ impl<'a> TSNamedTupleMember<'a> {
             label,
             element_type,
             optional,
+            permission: Default::default(),
         }
     }
 
@@ -22078,6 +23008,64 @@ impl<'a> TSNamedTupleMember<'a> {
         let builder = builder.builder();
         ArenaBox::new_in(
             Self::new(span, label, element_type, optional, builder),
+            &builder.allocator(),
+        )
+    }
+
+    /// Build a [`TSNamedTupleMember`] with `permission`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSNamedTupleMember::boxed_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `label`
+    /// * `element_type`
+    /// * `optional`
+    /// * `permission`: TightScript permission modifier, as in `[read a: string]`. Always a permission variant.
+    #[inline]
+    pub fn new_with_permission(
+        span: Span,
+        label: IdentifierName<'a>,
+        element_type: TSTupleElement<'a>,
+        optional: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSNamedTupleMember {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            label,
+            element_type,
+            optional,
+            permission: Some(permission),
+        }
+    }
+
+    /// Build a [`TSNamedTupleMember`] with `permission`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSNamedTupleMember::new_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `label`
+    /// * `element_type`
+    /// * `optional`
+    /// * `permission`: TightScript permission modifier, as in `[read a: string]`. Always a permission variant.
+    #[inline]
+    pub fn boxed_with_permission(
+        span: Span,
+        label: IdentifierName<'a>,
+        element_type: TSTupleElement<'a>,
+        optional: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_permission(span, label, element_type, optional, permission, builder),
             &builder.allocator(),
         )
     }
@@ -22661,7 +23649,7 @@ impl<'a> TSTupleElement<'a> {
         ))
     }
 
-    /// Build a [`TSTupleElement::TSMappedType`] with `scope_id`.
+    /// Build a [`TSTupleElement::TSMappedType`] with `permission` and `permission_sign` and `scope_id`.
     ///
     /// This node contains a [`TSMappedType`] that will be stored in the memory arena.
     ///
@@ -22673,9 +23661,11 @@ impl<'a> TSTupleElement<'a> {
     /// * `type_annotation`
     /// * `optional`: Optional modifier on type annotation
     /// * `readonly`: Readonly modifier before keyed index signature
+    /// * `permission`: TightScript permission modifier before the key, as in `{ -write [K in keyof T]: T[K] }`.
+    /// * `permission_sign`: TightScript: `+` or `-` before [`TSMappedType::permission`].
     /// * `scope_id`
     #[inline]
-    pub fn new_ts_mapped_type_with_scope_id(
+    pub fn new_ts_mapped_type_with_permission_and_permission_sign_and_scope_id(
         span: Span,
         key: BindingIdentifier<'a>,
         constraint: TSType<'a>,
@@ -22683,10 +23673,12 @@ impl<'a> TSTupleElement<'a> {
         type_annotation: Option<TSType<'a>>,
         optional: Option<TSMappedTypeModifierOperator>,
         readonly: Option<TSMappedTypeModifierOperator>,
+        permission: TSTypeOperatorOperator,
+        permission_sign: TSPermissionSign,
         scope_id: ScopeId,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
-        Self::TSMappedType(TSMappedType::boxed_with_scope_id(
+        Self::TSMappedType(TSMappedType::boxed_with_permission_and_permission_sign_and_scope_id(
             span,
             key,
             constraint,
@@ -22694,6 +23686,8 @@ impl<'a> TSTupleElement<'a> {
             type_annotation,
             optional,
             readonly,
+            permission,
+            permission_sign,
             scope_id,
             builder.builder(),
         ))
@@ -22721,6 +23715,35 @@ impl<'a> TSTupleElement<'a> {
             label,
             element_type,
             optional,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSTupleElement::TSNamedTupleMember`] with `permission`.
+    ///
+    /// This node contains a [`TSNamedTupleMember`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `label`
+    /// * `element_type`
+    /// * `optional`
+    /// * `permission`: TightScript permission modifier, as in `[read a: string]`. Always a permission variant.
+    #[inline]
+    pub fn new_ts_named_tuple_member_with_permission(
+        span: Span,
+        label: IdentifierName<'a>,
+        element_type: TSTupleElement<'a>,
+        optional: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSNamedTupleMember(TSNamedTupleMember::boxed_with_permission(
+            span,
+            label,
+            element_type,
+            optional,
+            permission,
             builder.builder(),
         ))
     }
@@ -22798,17 +23821,23 @@ impl<'a> TSTupleElement<'a> {
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
     /// * `operator`
+    /// * `lazy`: TightScript: `lazy` before a permission, as in `lazy read T`.
+    /// * `sign`: TightScript: the sign before a permission or `owned`/`exact`, as in `+rw T` or `-exact T`.
     /// * `type_annotation`: The type being operated on
     #[inline]
     pub fn new_ts_type_operator_type(
         span: Span,
         operator: TSTypeOperatorOperator,
+        lazy: bool,
+        sign: Option<TSPermissionSign>,
         type_annotation: TSType<'a>,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeOperatorType(TSTypeOperator::boxed(
             span,
             operator,
+            lazy,
+            sign,
             type_annotation,
             builder.builder(),
         ))
@@ -22836,6 +23865,35 @@ impl<'a> TSTupleElement<'a> {
             parameter_name,
             asserts,
             type_annotation,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSTupleElement::TSTypePredicate`] with `soft`.
+    ///
+    /// This node contains a [`TSTypePredicate`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter_name`: The identifier the predicate operates on
+    /// * `asserts`: Does this predicate include an `asserts` modifier?
+    /// * `type_annotation`
+    /// * `soft`: TightScript: a soft type guard, `x is? T`.
+    #[inline]
+    pub fn new_ts_type_predicate_with_soft(
+        span: Span,
+        parameter_name: TSTypePredicateName<'a>,
+        asserts: bool,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        soft: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSTypePredicate(TSTypePredicate::boxed_with_soft(
+            span,
+            parameter_name,
+            asserts,
+            type_annotation,
+            soft,
             builder.builder(),
         ))
     }
@@ -22972,6 +24030,84 @@ impl<'a> TSTupleElement<'a> {
     #[inline]
     pub fn new_js_doc_unknown_type(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
         Self::JSDocUnknownType(JSDocUnknownType::boxed(span, builder.builder()))
+    }
+
+    /// Build a [`TSTupleElement::TSDistributeType`].
+    ///
+    /// This node contains a [`TSDistributeType`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    #[inline]
+    pub fn new_ts_distribute_type(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSDistributeType(TSDistributeType::boxed(
+            span,
+            source,
+            member,
+            body,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSTupleElement::TSDistributeType`] with `scope_id`.
+    ///
+    /// This node contains a [`TSDistributeType`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `source`: The union distributed over, `U` in `distribute U as U[]`.
+    /// * `member`: The name each member is bound to, `M` in `distribute U M as { m: M }`.
+    /// * `body`: The type built from each member.
+    /// * `scope_id`
+    #[inline]
+    pub fn new_ts_distribute_type_with_scope_id(
+        span: Span,
+        source: TSType<'a>,
+        member: Option<ArenaBox<'a, TSTypeParameter<'a>>>,
+        body: TSType<'a>,
+        scope_id: ScopeId,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSDistributeType(TSDistributeType::boxed_with_scope_id(
+            span,
+            source,
+            member,
+            body,
+            scope_id,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSTupleElement::TSTypeReturn`].
+    ///
+    /// This node contains a [`TSTypeReturn`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `value_type`: The ordinary return type before `and`, if any.
+    /// * `type_annotation`: The type that is returned.
+    #[inline]
+    pub fn new_ts_type_return(
+        span: Span,
+        value_type: Option<TSType<'a>>,
+        type_annotation: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSTypeReturn(TSTypeReturn::boxed(
+            span,
+            value_type,
+            type_annotation,
+            builder.builder(),
+        ))
     }
 }
 
@@ -23598,6 +24734,13 @@ impl<'a> TSTypeParameter<'a> {
             r#in,
             out,
             r#const,
+            owned: Default::default(),
+            exact: Default::default(),
+            exact_optional: Default::default(),
+            deep_permission: Default::default(),
+            deep_lazy: Default::default(),
+            as_exact: Default::default(),
+            as_exact_deep: Default::default(),
         }
     }
 
@@ -23628,6 +24771,125 @@ impl<'a> TSTypeParameter<'a> {
         let builder = builder.builder();
         ArenaBox::new_in(
             Self::new(span, name, constraint, default, r#in, out, r#const, builder),
+            &builder.allocator(),
+        )
+    }
+
+    /// Build a [`TSTypeParameter`] with `owned` and `exact` and `exact_optional` and `deep_permission` and `deep_lazy` and `as_exact` and `as_exact_deep`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSTypeParameter::boxed_with_owned_and_exact_and_exact_optional_and_deep_permission_and_deep_lazy_and_as_exact_and_as_exact_deep`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `name`: The name of the parameter, e.g. `T` in `type Foo<T> = ...`.
+    /// * `constraint`: Constrains what types can be passed to the type parameter.
+    /// * `default`: Default value of the type parameter if no type is provided when using the type.
+    /// * `in`: Was an `in` modifier keyword present?
+    /// * `out`: Was an `out` modifier keyword present?
+    /// * `const`: Was a `const` modifier keyword present?
+    /// * `owned`: TightScript: an `owned` hint, as in `<owned T>`.
+    /// * `exact`: TightScript: an `exact` hint, as in `<exact T>`.
+    /// * `exact_optional`: TightScript: the `exact` hint is `exact?`, as in `<exact? T>`.
+    /// * `deep_permission`: TightScript: the permission in `<deep rw T>`.
+    /// * `deep_lazy`: TightScript: the `deep` permission is `lazy`, as in `<lazy deep rwd T>`.
+    /// * `as_exact`: TightScript: `as exact` before the constraint, as in `<T as exact extends C>`.
+    /// * `as_exact_deep`: TightScript: the `as exact` is `as deep exact`.
+    #[inline]
+    pub fn new_with_owned_and_exact_and_exact_optional_and_deep_permission_and_deep_lazy_and_as_exact_and_as_exact_deep(
+        span: Span,
+        name: BindingIdentifier<'a>,
+        constraint: Option<TSType<'a>>,
+        default: Option<TSType<'a>>,
+        r#in: bool,
+        out: bool,
+        r#const: bool,
+        owned: bool,
+        exact: bool,
+        exact_optional: bool,
+        deep_permission: TSTypeOperatorOperator,
+        deep_lazy: bool,
+        as_exact: bool,
+        as_exact_deep: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSTypeParameter {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            name,
+            constraint,
+            default,
+            r#in,
+            out,
+            r#const,
+            owned,
+            exact,
+            exact_optional,
+            deep_permission: Some(deep_permission),
+            deep_lazy,
+            as_exact,
+            as_exact_deep,
+        }
+    }
+
+    /// Build a [`TSTypeParameter`] with `owned` and `exact` and `exact_optional` and `deep_permission` and `deep_lazy` and `as_exact` and `as_exact_deep`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSTypeParameter::new_with_owned_and_exact_and_exact_optional_and_deep_permission_and_deep_lazy_and_as_exact_and_as_exact_deep`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `name`: The name of the parameter, e.g. `T` in `type Foo<T> = ...`.
+    /// * `constraint`: Constrains what types can be passed to the type parameter.
+    /// * `default`: Default value of the type parameter if no type is provided when using the type.
+    /// * `in`: Was an `in` modifier keyword present?
+    /// * `out`: Was an `out` modifier keyword present?
+    /// * `const`: Was a `const` modifier keyword present?
+    /// * `owned`: TightScript: an `owned` hint, as in `<owned T>`.
+    /// * `exact`: TightScript: an `exact` hint, as in `<exact T>`.
+    /// * `exact_optional`: TightScript: the `exact` hint is `exact?`, as in `<exact? T>`.
+    /// * `deep_permission`: TightScript: the permission in `<deep rw T>`.
+    /// * `deep_lazy`: TightScript: the `deep` permission is `lazy`, as in `<lazy deep rwd T>`.
+    /// * `as_exact`: TightScript: `as exact` before the constraint, as in `<T as exact extends C>`.
+    /// * `as_exact_deep`: TightScript: the `as exact` is `as deep exact`.
+    #[inline]
+    pub fn boxed_with_owned_and_exact_and_exact_optional_and_deep_permission_and_deep_lazy_and_as_exact_and_as_exact_deep(
+        span: Span,
+        name: BindingIdentifier<'a>,
+        constraint: Option<TSType<'a>>,
+        default: Option<TSType<'a>>,
+        r#in: bool,
+        out: bool,
+        r#const: bool,
+        owned: bool,
+        exact: bool,
+        exact_optional: bool,
+        deep_permission: TSTypeOperatorOperator,
+        deep_lazy: bool,
+        as_exact: bool,
+        as_exact_deep: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_owned_and_exact_and_exact_optional_and_deep_permission_and_deep_lazy_and_as_exact_and_as_exact_deep(
+                span,
+                name,
+                constraint,
+                default,
+                r#in,
+                out,
+                r#const,
+                owned,
+                exact,
+                exact_optional,
+                deep_permission,
+                deep_lazy,
+                as_exact,
+                as_exact_deep,
+                builder,
+            ),
             &builder.allocator(),
         )
     }
@@ -23827,6 +25089,32 @@ impl<'a> TSClassImplements<'a> {
             span,
             expression,
             type_arguments,
+            remove_exact: Default::default(),
+        }
+    }
+
+    /// Build a [`TSClassImplements`] with `remove_exact`.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `expression`
+    /// * `type_arguments`
+    /// * `remove_exact`: TightScript: `-exact` before the type, as in `implements -exact A`.
+    #[inline]
+    pub fn new_with_remove_exact(
+        span: Span,
+        expression: TSTypeName<'a>,
+        type_arguments: Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>,
+        remove_exact: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSClassImplements {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            expression,
+            type_arguments,
+            remove_exact,
         }
     }
 }
@@ -24048,6 +25336,7 @@ impl<'a> TSPropertySignature<'a> {
             readonly,
             key,
             type_annotation,
+            permission: Default::default(),
         }
     }
 
@@ -24076,6 +25365,83 @@ impl<'a> TSPropertySignature<'a> {
         let builder = builder.builder();
         ArenaBox::new_in(
             Self::new(span, computed, optional, readonly, key, type_annotation, builder),
+            &builder.allocator(),
+        )
+    }
+
+    /// Build a [`TSPropertySignature`] with `permission`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSPropertySignature::boxed_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `computed`
+    /// * `optional`
+    /// * `readonly`
+    /// * `key`
+    /// * `type_annotation`
+    /// * `permission`: TightScript permission modifier, as in `{ rw a: string }`. Always a permission variant.
+    #[inline]
+    pub fn new_with_permission(
+        span: Span,
+        computed: bool,
+        optional: bool,
+        readonly: bool,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSPropertySignature {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            computed,
+            optional,
+            readonly,
+            key,
+            type_annotation,
+            permission: Some(permission),
+        }
+    }
+
+    /// Build a [`TSPropertySignature`] with `permission`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSPropertySignature::new_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `computed`
+    /// * `optional`
+    /// * `readonly`
+    /// * `key`
+    /// * `type_annotation`
+    /// * `permission`: TightScript permission modifier, as in `{ rw a: string }`. Always a permission variant.
+    #[inline]
+    pub fn boxed_with_permission(
+        span: Span,
+        computed: bool,
+        optional: bool,
+        readonly: bool,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_permission(
+                span,
+                computed,
+                optional,
+                readonly,
+                key,
+                type_annotation,
+                permission,
+                builder,
+            ),
             &builder.allocator(),
         )
     }
@@ -24111,6 +25477,38 @@ impl<'a> TSSignature<'a> {
         ))
     }
 
+    /// Build a [`TSSignature::TSIndexSignature`] with `permission`.
+    ///
+    /// This node contains a [`TSIndexSignature`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter`
+    /// * `type_annotation`
+    /// * `readonly`
+    /// * `static`
+    /// * `permission`: TightScript permission modifier, as in `{ read [key: string]: T }`. Always a permission variant.
+    #[inline]
+    pub fn new_ts_index_signature_with_permission(
+        span: Span,
+        parameter: TSIndexSignatureName<'a>,
+        type_annotation: ArenaBox<'a, TSTypeAnnotation<'a>>,
+        readonly: bool,
+        r#static: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSIndexSignature(TSIndexSignature::boxed_with_permission(
+            span,
+            parameter,
+            type_annotation,
+            readonly,
+            r#static,
+            permission,
+            builder.builder(),
+        ))
+    }
+
     /// Build a [`TSSignature::TSPropertySignature`].
     ///
     /// This node contains a [`TSPropertySignature`] that will be stored in the memory arena.
@@ -24139,6 +25537,41 @@ impl<'a> TSSignature<'a> {
             readonly,
             key,
             type_annotation,
+            builder.builder(),
+        ))
+    }
+
+    /// Build a [`TSSignature::TSPropertySignature`] with `permission`.
+    ///
+    /// This node contains a [`TSPropertySignature`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `computed`
+    /// * `optional`
+    /// * `readonly`
+    /// * `key`
+    /// * `type_annotation`
+    /// * `permission`: TightScript permission modifier, as in `{ rw a: string }`. Always a permission variant.
+    #[inline]
+    pub fn new_ts_property_signature_with_permission(
+        span: Span,
+        computed: bool,
+        optional: bool,
+        readonly: bool,
+        key: PropertyKey<'a>,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSPropertySignature(TSPropertySignature::boxed_with_permission(
+            span,
+            computed,
+            optional,
+            readonly,
+            key,
+            type_annotation,
+            permission,
             builder.builder(),
         ))
     }
@@ -24374,6 +25807,7 @@ impl<'a> TSIndexSignature<'a> {
             type_annotation,
             readonly,
             r#static,
+            permission: Default::default(),
         }
     }
 
@@ -24400,6 +25834,77 @@ impl<'a> TSIndexSignature<'a> {
         let builder = builder.builder();
         ArenaBox::new_in(
             Self::new(span, parameter, type_annotation, readonly, r#static, builder),
+            &builder.allocator(),
+        )
+    }
+
+    /// Build a [`TSIndexSignature`] with `permission`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSIndexSignature::boxed_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter`
+    /// * `type_annotation`
+    /// * `readonly`
+    /// * `static`
+    /// * `permission`: TightScript permission modifier, as in `{ read [key: string]: T }`. Always a permission variant.
+    #[inline]
+    pub fn new_with_permission(
+        span: Span,
+        parameter: TSIndexSignatureName<'a>,
+        type_annotation: ArenaBox<'a, TSTypeAnnotation<'a>>,
+        readonly: bool,
+        r#static: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSIndexSignature {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            parameter,
+            type_annotation,
+            readonly,
+            r#static,
+            permission: Some(permission),
+        }
+    }
+
+    /// Build a [`TSIndexSignature`] with `permission`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSIndexSignature::new_with_permission`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter`
+    /// * `type_annotation`
+    /// * `readonly`
+    /// * `static`
+    /// * `permission`: TightScript permission modifier, as in `{ read [key: string]: T }`. Always a permission variant.
+    #[inline]
+    pub fn boxed_with_permission(
+        span: Span,
+        parameter: TSIndexSignatureName<'a>,
+        type_annotation: ArenaBox<'a, TSTypeAnnotation<'a>>,
+        readonly: bool,
+        r#static: bool,
+        permission: TSTypeOperatorOperator,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_permission(
+                span,
+                parameter,
+                type_annotation,
+                readonly,
+                r#static,
+                permission,
+                builder,
+            ),
             &builder.allocator(),
         )
     }
@@ -24882,6 +26387,32 @@ impl<'a> TSInterfaceHeritage<'a> {
             span,
             type_name,
             type_arguments,
+            remove_exact: Default::default(),
+        }
+    }
+
+    /// Build a [`TSInterfaceHeritage`] with `remove_exact`.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_name`
+    /// * `type_arguments`
+    /// * `remove_exact`: TightScript: `-exact` before the type, as in `interface A extends -exact B {}`.
+    #[inline]
+    pub fn new_with_remove_exact(
+        span: Span,
+        type_name: TSTypeName<'a>,
+        type_arguments: Option<ArenaBox<'a, TSTypeParameterInstantiation<'a>>>,
+        remove_exact: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSInterfaceHeritage {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            type_name,
+            type_arguments,
+            remove_exact,
         }
     }
 }
@@ -24912,6 +26443,7 @@ impl<'a> TSTypePredicate<'a> {
             parameter_name,
             asserts,
             type_annotation,
+            soft: Default::default(),
         }
     }
 
@@ -24936,6 +26468,64 @@ impl<'a> TSTypePredicate<'a> {
         let builder = builder.builder();
         ArenaBox::new_in(
             Self::new(span, parameter_name, asserts, type_annotation, builder),
+            &builder.allocator(),
+        )
+    }
+
+    /// Build a [`TSTypePredicate`] with `soft`.
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSTypePredicate::boxed_with_soft`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter_name`: The identifier the predicate operates on
+    /// * `asserts`: Does this predicate include an `asserts` modifier?
+    /// * `type_annotation`
+    /// * `soft`: TightScript: a soft type guard, `x is? T`.
+    #[inline]
+    pub fn new_with_soft(
+        span: Span,
+        parameter_name: TSTypePredicateName<'a>,
+        asserts: bool,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        soft: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        let builder = builder.builder();
+        TSTypePredicate {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            parameter_name,
+            asserts,
+            type_annotation,
+            soft,
+        }
+    }
+
+    /// Build a [`TSTypePredicate`] with `soft`, and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSTypePredicate::new_with_soft`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `parameter_name`: The identifier the predicate operates on
+    /// * `asserts`: Does this predicate include an `asserts` modifier?
+    /// * `type_annotation`
+    /// * `soft`: TightScript: a soft type guard, `x is? T`.
+    #[inline]
+    pub fn boxed_with_soft(
+        span: Span,
+        parameter_name: TSTypePredicateName<'a>,
+        asserts: bool,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        soft: bool,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(
+            Self::new_with_soft(span, parameter_name, asserts, type_annotation, soft, builder),
             &builder.allocator(),
         )
     }
@@ -26099,6 +27689,8 @@ impl<'a> TSMappedType<'a> {
             type_annotation,
             optional,
             readonly,
+            permission: Default::default(),
+            permission_sign: Default::default(),
             scope_id: Default::default(),
         }
     }
@@ -26143,10 +27735,10 @@ impl<'a> TSMappedType<'a> {
         )
     }
 
-    /// Build a [`TSMappedType`] with `scope_id`.
+    /// Build a [`TSMappedType`] with `permission` and `permission_sign` and `scope_id`.
     ///
     /// If you want the built node to be allocated in the memory arena,
-    /// use [`TSMappedType::boxed_with_scope_id`] instead.
+    /// use [`TSMappedType::boxed_with_permission_and_permission_sign_and_scope_id`] instead.
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
@@ -26156,9 +27748,11 @@ impl<'a> TSMappedType<'a> {
     /// * `type_annotation`
     /// * `optional`: Optional modifier on type annotation
     /// * `readonly`: Readonly modifier before keyed index signature
+    /// * `permission`: TightScript permission modifier before the key, as in `{ -write [K in keyof T]: T[K] }`.
+    /// * `permission_sign`: TightScript: `+` or `-` before [`TSMappedType::permission`].
     /// * `scope_id`
     #[inline]
-    pub fn new_with_scope_id(
+    pub fn new_with_permission_and_permission_sign_and_scope_id(
         span: Span,
         key: BindingIdentifier<'a>,
         constraint: TSType<'a>,
@@ -26166,6 +27760,8 @@ impl<'a> TSMappedType<'a> {
         type_annotation: Option<TSType<'a>>,
         optional: Option<TSMappedTypeModifierOperator>,
         readonly: Option<TSMappedTypeModifierOperator>,
+        permission: TSTypeOperatorOperator,
+        permission_sign: TSPermissionSign,
         scope_id: ScopeId,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
@@ -26179,14 +27775,16 @@ impl<'a> TSMappedType<'a> {
             type_annotation,
             optional,
             readonly,
+            permission: Some(permission),
+            permission_sign: Some(permission_sign),
             scope_id: Cell::new(Some(scope_id)),
         }
     }
 
-    /// Build a [`TSMappedType`] with `scope_id`, and store it in the memory arena.
+    /// Build a [`TSMappedType`] with `permission` and `permission_sign` and `scope_id`, and store it in the memory arena.
     ///
     /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
-    /// If you want a stack-allocated node, use [`TSMappedType::new_with_scope_id`] instead.
+    /// If you want a stack-allocated node, use [`TSMappedType::new_with_permission_and_permission_sign_and_scope_id`] instead.
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
@@ -26196,9 +27794,11 @@ impl<'a> TSMappedType<'a> {
     /// * `type_annotation`
     /// * `optional`: Optional modifier on type annotation
     /// * `readonly`: Readonly modifier before keyed index signature
+    /// * `permission`: TightScript permission modifier before the key, as in `{ -write [K in keyof T]: T[K] }`.
+    /// * `permission_sign`: TightScript: `+` or `-` before [`TSMappedType::permission`].
     /// * `scope_id`
     #[inline]
-    pub fn boxed_with_scope_id(
+    pub fn boxed_with_permission_and_permission_sign_and_scope_id(
         span: Span,
         key: BindingIdentifier<'a>,
         constraint: TSType<'a>,
@@ -26206,12 +27806,14 @@ impl<'a> TSMappedType<'a> {
         type_annotation: Option<TSType<'a>>,
         optional: Option<TSMappedTypeModifierOperator>,
         readonly: Option<TSMappedTypeModifierOperator>,
+        permission: TSTypeOperatorOperator,
+        permission_sign: TSPermissionSign,
         scope_id: ScopeId,
         builder: &impl GetAstBuilder<'a>,
     ) -> ArenaBox<'a, Self> {
         let builder = builder.builder();
         ArenaBox::new_in(
-            Self::new_with_scope_id(
+            Self::new_with_permission_and_permission_sign_and_scope_id(
                 span,
                 key,
                 constraint,
@@ -26219,6 +27821,8 @@ impl<'a> TSMappedType<'a> {
                 type_annotation,
                 optional,
                 readonly,
+                permission,
+                permission_sign,
                 scope_id,
                 builder,
             ),

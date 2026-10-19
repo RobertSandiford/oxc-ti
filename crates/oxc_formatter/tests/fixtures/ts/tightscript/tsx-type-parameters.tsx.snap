@@ -1,0 +1,24 @@
+---
+source: crates/oxc_formatter/tests/fixtures/mod.rs
+---
+==================== Input ====================
+const a = <deep rw T,>(x: T) => x;
+const b = <const deep rw T,>(x: T) => x;
+const c = <deep rw T extends U>(x: T) => x;
+
+==================== Output ====================
+------------------
+{ printWidth: 80 }
+------------------
+const a = <deep rw T,>(x: T) => x;
+const b = <const deep rw T,>(x: T) => x;
+const c = <deep rw T extends U>(x: T) => x;
+
+-------------------
+{ printWidth: 100 }
+-------------------
+const a = <deep rw T,>(x: T) => x;
+const b = <const deep rw T,>(x: T) => x;
+const c = <deep rw T extends U>(x: T) => x;
+
+===================== End =====================

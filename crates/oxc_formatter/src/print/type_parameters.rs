@@ -32,7 +32,26 @@ impl<'a> FormatWrite<'a> for AstNode<'a, TSTypeParameter<'a>> {
         if self.out() {
             write!(f, ["out", space()]);
         }
+        if self.owned {
+            write!(f, ["owned", space()]);
+        }
+        if self.exact {
+            write!(f, [if self.exact_optional { "exact?" } else { "exact" }, space()]);
+        }
+        if let Some(permission) = self.deep_permission {
+            if self.deep_lazy {
+                write!(f, ["lazy", space()]);
+            }
+            write!(f, ["deep", space(), permission.to_str(), space()]);
+        }
         write!(f, self.name());
+        if self.as_exact {
+            write!(f, [space(), "as", space()]);
+            if self.as_exact_deep {
+                write!(f, ["deep", space()]);
+            }
+            write!(f, "exact");
+        }
 
         if let Some(constraint) = &self.constraint() {
             let group_id = f.group_id("constraint");

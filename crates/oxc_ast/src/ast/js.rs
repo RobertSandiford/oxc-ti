@@ -1165,6 +1165,9 @@ pub enum Declaration<'a> {
     TSNamespaceDeclaration(Box<'a, TSNamespaceDeclaration<'a>>) = 39,
     TSGlobalDeclaration(Box<'a, TSGlobalDeclaration<'a>>) = 40,
     TSImportEqualsDeclaration(Box<'a, TSImportEqualsDeclaration<'a>>) = 41,
+    // TightScript
+    TSProvideDeclaration(Box<'a, TSProvideDeclaration<'a>>) = 42,
+    TSTypeFromDeclaration(Box<'a, TSTypeFromDeclaration<'a>>) = 43,
 }
 
 /// `let a;` in `let a; a = 1;`
@@ -1879,6 +1882,13 @@ pub struct FormalParameters<'a> {
     pub items: Vec<'a, FormalParameter<'a>>,
     #[estree(skip)]
     pub rest: Option<Box<'a, FormalParameterRest<'a>>>,
+    /// TightScript: the type of the function these parameters belong to, `F` in `function f: F (a) {}`.
+    /// In source it comes before the type parameters. A declared function typed this way may have
+    /// no parameter list (`declare function f: F;`), which gives these parameters an empty span.
+    #[ts]
+    #[builder(default)]
+    #[estree(skip)]
+    pub function_type: Option<Box<'a, TSTypeAnnotation<'a>>>,
 }
 
 #[ast(visit)]
@@ -2348,6 +2358,11 @@ pub struct PropertyDefinition<'a> {
     /// ```
     #[ts]
     pub accessibility: Option<TSAccessibility>,
+    /// TightScript permission modifier, as in `rw x = 1`. Always a permission variant.
+    #[ts]
+    #[builder(default)]
+    #[estree(skip)]
+    pub permission: Option<TSTypeOperatorOperator>,
 }
 
 #[ast]
@@ -2523,6 +2538,11 @@ pub struct AccessorProperty<'a> {
     /// ```
     #[ts]
     pub accessibility: Option<TSAccessibility>,
+    /// TightScript permission modifier, as in `accessor rw x`. Always a permission variant.
+    #[ts]
+    #[builder(default)]
+    #[estree(skip)]
+    pub permission: Option<TSTypeOperatorOperator>,
 }
 
 #[ast(visit)]

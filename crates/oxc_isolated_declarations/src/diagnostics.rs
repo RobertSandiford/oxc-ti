@@ -2,6 +2,14 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::Span;
 
 #[cold]
+pub fn type_from_needs_type_checker(span: Span) -> OxcDiagnostic {
+    OxcDiagnostic::error(
+        "`type Name from` can't be emitted without a type checker; write `type Name = ...` instead.",
+    )
+    .with_label(span)
+}
+
+#[cold]
 pub fn function_must_have_explicit_return_type(span: Span) -> OxcDiagnostic {
     OxcDiagnostic::error(
         "TS9007: Function must have an explicit return type annotation with --isolatedDeclarations.",

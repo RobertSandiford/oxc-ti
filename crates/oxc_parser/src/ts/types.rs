@@ -14,6 +14,16 @@ use super::{super::js::FunctionKind, statement::CallOrConstructorSignature};
 
 impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_ts_type(&mut self) -> TSType<'a> {
+        self.type_depth += 1;
+        let ty = self.parse_ts_type_at_depth();
+        self.type_depth -= 1;
+        ty
+    }
+
+    fn parse_ts_type_at_depth(&mut self) -> TSType<'a> {
+        if self.is_start_of_distribute_type() {
+            return self.parse_distribute_type();
+        }
         if self.is_start_of_function_type_or_constructor_type() {
             return self.parse_function_or_constructor_type();
         }
@@ -54,7 +64,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         });
         let return_type = {
             let return_type_start = self.cur_start();
-            let return_type = self.parse_return_type(Kind::Arrow);
+            let return_type = self.parse_return_type(Kind::Arrow, false);
             TSTypeAnnotation::boxed(self.end_span(return_type_start), return_type, self)
         };
 
@@ -201,7 +211,41 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_ts_type_parameter(&mut self, allow_variance: bool) -> TSTypeParameter<'a> {
         let start = self.cur_start();
 
-        let modifiers = self.parse_modifiers(true, false);
+        let mut modifiers = self.parse_modifiers(true, false);
+
+        // TightScript: `<[lazy] deep rw T>`, or hints as in `<owned T>`, `<exact? T>`, `<owned exact T>`.
+        let mut deep_permission = None;
+        let (mut owned, mut exact, mut exact_optional) = (false, false, false);
+        let deep_lazy = self.at_word("lazy")
+            && self.lookahead(Self::is_start_of_lazy_type_parameter_permission);
+        if deep_lazy {
+            self.bump_any();
+        }
+        if self.at_word("deep") && self.lookahead(Self::is_start_of_type_parameter_permission) {
+            self.bump_any();
+            deep_permission = self.cur_permission();
+            self.bump_any();
+        } else {
+            while (self.at_word("owned") || self.at_word("exact"))
+                && self.lookahead(Self::is_type_parameter_hints_then_name)
+            {
+                if self.at_word("owned") {
+                    owned = true;
+                    self.bump_any();
+                } else {
+                    exact = true;
+                    self.bump_any();
+                    exact_optional |= self.eat(Kind::Question);
+                }
+            }
+        }
+        // `<exact const T>` as well as `<const exact T>`.
+        if (deep_permission.is_some() || owned || exact)
+            && modifiers.kinds() == ModifierKinds::none()
+        {
+            modifiers = self.parse_modifiers(true, false);
+        }
+
         let allowed_modifiers = if allow_variance {
             ModifierKinds::new([ModifierKind::In, ModifierKind::Out, ModifierKind::Const])
         } else {
@@ -224,10 +268,23 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
         let name = self.parse_binding_identifier();
         self.check_reserved_type_name(&name, "Type parameter");
+
+        // TightScript: `<T as exact extends C>`, `<T as deep exact extends C>`.
+        let (mut as_exact, mut as_exact_deep) = (false, false);
+        if self.at(Kind::As) && self.lookahead(Self::next_is_as_exact_extends) {
+            self.bump_any(); // bump `as`
+            as_exact_deep = self.at_word("deep");
+            if as_exact_deep {
+                self.bump_any();
+            }
+            self.bump_any(); // bump `exact`
+            as_exact = true;
+        }
+
         let constraint = self.parse_ts_type_constraint();
         let default = self.parse_ts_default_type();
 
-        TSTypeParameter::new(
+        let mut type_parameter = TSTypeParameter::new(
             self.end_span(start),
             name,
             constraint,
@@ -236,7 +293,69 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             modifiers.contains(ModifierKind::Out),
             modifiers.contains(ModifierKind::Const),
             self,
-        )
+        );
+        type_parameter.owned = owned;
+        type_parameter.exact = exact;
+        type_parameter.exact_optional = exact_optional;
+        type_parameter.deep_permission = deep_permission;
+        type_parameter.deep_lazy = deep_lazy;
+        type_parameter.as_exact = as_exact;
+        type_parameter.as_exact_deep = as_exact_deep;
+        type_parameter
+    }
+
+    /// At `lazy`: `<lazy deep rwd T>`.
+    pub(crate) fn is_start_of_lazy_type_parameter_permission(&mut self) -> bool {
+        self.bump_any();
+        self.at_word("deep")
+            && !self.cur_token().is_on_new_line()
+            && self.is_start_of_type_parameter_permission()
+    }
+
+    /// At `deep`: `<deep rw T>`, a permission and then the type parameter's name.
+    pub(crate) fn is_start_of_type_parameter_permission(&mut self) -> bool {
+        if !self.next_is_permission_on_same_line() {
+            return false;
+        }
+        self.bump_any();
+        self.cur_kind().is_binding_identifier()
+    }
+
+    /// At `owned` or `exact`: a hint if more hints, any `const`, `in` or `out`, and then the name
+    /// follow on the same line. Otherwise it is the name, as in `<exact>` or `<owned exact>`.
+    pub(crate) fn is_type_parameter_hints_then_name(&mut self) -> bool {
+        let is_exact = self.at_word("exact");
+        self.bump_any();
+        if is_exact && self.at(Kind::Question) && !self.cur_token().is_on_new_line() {
+            self.bump_any();
+        }
+        if self.cur_token().is_on_new_line() {
+            return false;
+        }
+        if (self.at_word("owned") || self.at_word("exact"))
+            && self.lookahead(Self::is_type_parameter_hints_then_name)
+        {
+            return true;
+        }
+        while matches!(self.cur_kind(), Kind::Const | Kind::In | Kind::Out)
+            && !self.cur_token().is_on_new_line()
+        {
+            self.bump_any();
+        }
+        self.cur_kind().is_binding_identifier() && !self.cur_token().is_on_new_line()
+    }
+
+    /// At `as`: `as exact extends` or `as deep exact extends`.
+    fn next_is_as_exact_extends(&mut self) -> bool {
+        self.bump_any();
+        if self.at_word("deep") {
+            self.bump_any();
+        }
+        if !self.at_word("exact") {
+            return false;
+        }
+        self.bump_any();
+        self.at(Kind::Extends)
     }
 
     fn parse_intersection_type_or_higher(&mut self) -> TSType<'a> {
@@ -261,13 +380,22 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let start = self.cur_start();
         let has_leading_operator = self.eat(kind);
         /* hasLeadingOperator && parseFunctionOrConstructorTypeToError(isUnionType) ||*/
-        let mut ty = parse_constituent_type(self);
+        // TightScript: `A | distribute T as X`; the body runs to the end, so it needs no parentheses.
+        let mut ty = if has_leading_operator && self.is_start_of_distribute_type() {
+            self.parse_distribute_type()
+        } else {
+            parse_constituent_type(self)
+        };
         if self.at(kind) || has_leading_operator {
             let mut types = ArenaVec::from_value_in(ty, self);
             while self.eat(kind) {
                 let ty =
                     /*parseFunctionOrConstructorTypeToError(isUnionType) || */
-                    parse_constituent_type(self);
+                    if self.is_start_of_distribute_type() {
+                        self.parse_distribute_type()
+                    } else {
+                        parse_constituent_type(self)
+                    };
                 types.push(ty);
             }
             let span = self.end_span(start);
@@ -282,29 +410,386 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_type_operator_or_higher(&mut self) -> TSType<'a> {
         match self.cur_kind() {
-            Kind::KeyOf => self.parse_type_operator(TSTypeOperatorOperator::Keyof),
-            Kind::Unique => self.parse_type_operator(TSTypeOperatorOperator::Unique),
-            Kind::Readonly => self.parse_type_operator(TSTypeOperatorOperator::Readonly),
-            Kind::Infer => self.parse_infer_type(),
-            _ => self.context_remove(
-                Context::DisallowConditionalTypes,
-                Self::parse_postfix_type_or_higher,
-            ),
+            Kind::KeyOf => return self.parse_type_operator(TSTypeOperatorOperator::Keyof),
+            Kind::Unique => return self.parse_type_operator(TSTypeOperatorOperator::Unique),
+            Kind::Readonly => return self.parse_type_operator(TSTypeOperatorOperator::Readonly),
+            Kind::Infer => return self.parse_infer_type(),
+            Kind::Type if self.lookahead(Self::next_is_start_of_type_return) => {
+                return self.parse_type_return();
+            }
+            Kind::Ident => {
+                // `owned`, `exact` and `transient` can't be types alone, so `{` after them is the operand even where a body could follow.
+                if let Some(operator) = self.cur_ownership_operator()
+                    && (self.lookahead(Self::next_is_open_brace_on_same_line)
+                        || self.lookahead(Self::next_token_can_follow_permission_type_operator))
+                {
+                    return self.parse_type_operator(operator);
+                }
+                if self.at_word("deep")
+                    && (self.lookahead(Self::next_is_permission_on_same_line)
+                        || self.lookahead(Self::next_is_exact_on_same_line))
+                {
+                    return self.parse_type_operator(TSTypeOperatorOperator::Deep);
+                }
+            }
+            Kind::Minus if self.lookahead(Self::is_start_of_disown_type_operator) => {
+                return self.parse_disown_type_operator();
+            }
+            _ => {}
         }
+        if (self.cur_permission().is_some()
+            && self.lookahead(Self::next_token_can_follow_permission_type_operator))
+            || ((self.at_word("lazy") || self.cur_permission_sign().is_some())
+                && self.lookahead(Self::is_start_of_prefixed_permission_type_operator))
+        {
+            return self.parse_permission_type_operator();
+        }
+        self.context_remove(Context::DisallowConditionalTypes, Self::parse_postfix_type_or_higher)
     }
 
     fn parse_type_operator(&mut self, operator: TSTypeOperatorOperator) -> TSType<'a> {
         let start = self.cur_start();
         self.bump_any(); // bump operator
         let operator_span = self.end_span(start);
-        let ty = self.parse_type_operator_or_higher();
+        // `exact (a: string) => string`: an exact function, so its operand may be a function type.
+        let ty = if operator == TSTypeOperatorOperator::Exact
+            && self.is_start_of_function_type_or_constructor_type()
+        {
+            self.parse_function_or_constructor_type()
+        } else {
+            self.parse_type_operator_or_higher()
+        };
         if operator == TSTypeOperatorOperator::Readonly
             && !matches!(ty, TSType::TSArrayType(_))
             && !matches!(ty, TSType::TSTupleType(_))
         {
             self.error(diagnostics::readonly_in_array_or_tuple_type(operator_span));
         }
-        TSType::new_ts_type_operator_type(self.end_span(start), operator, ty, self)
+        TSType::new_ts_type_operator_type(self.end_span(start), operator, false, None, ty, self)
+    }
+
+    /// TightScript: `distribute Source as Body` or `distribute Source Member as Body`.
+    /// A type start on the same line makes `distribute` the keyword; after `{` or `[`, which can
+    /// also follow a type named `distribute` (a function body, `distribute[]`), only a later `as` does.
+    fn is_start_of_distribute_type(&mut self) -> bool {
+        self.at_word("distribute") && self.lookahead(Self::next_is_start_of_distribute_type)
+    }
+
+    fn next_is_start_of_distribute_type(&mut self) -> bool {
+        self.bump_any();
+        if matches!(
+            self.cur_kind(),
+            Kind::As
+                | Kind::Satisfies
+                | Kind::Pipe
+                | Kind::Amp
+                | Kind::LAngle
+                | Kind::Question
+                | Kind::Bang
+                | Kind::Star
+        ) {
+            return false;
+        }
+        if self.cur_token().is_on_new_line() || !self.is_start_of_type(false) {
+            return false;
+        }
+        if !matches!(self.cur_kind(), Kind::LCurly | Kind::LBrack) {
+            return true;
+        }
+        let errors_count = self.errors_count();
+        self.parse_union_type_or_higher();
+        if self.has_fatal_error() || errors_count != self.errors_count() {
+            return false;
+        }
+        if self.at(Kind::Comma) {
+            return true;
+        }
+        if self.cur_kind().is_identifier() && !self.at(Kind::As) {
+            self.bump_any();
+        }
+        self.at(Kind::As)
+    }
+
+    fn parse_distribute_type(&mut self) -> TSType<'a> {
+        let start = self.cur_start();
+        self.bump_any(); // bump `distribute`
+        let source = self.parse_union_type_or_higher();
+        if self.at(Kind::Comma) {
+            let comma_start = self.cur_start();
+            while self.eat(Kind::Comma) {
+                self.parse_union_type_or_higher();
+            }
+            self.error(diagnostics::distribute_takes_one_source(self.end_span(comma_start)));
+        }
+        let member = if self.cur_kind().is_identifier() && !self.at(Kind::As) {
+            let member_start = self.cur_start();
+            let name = self.parse_binding_identifier();
+            let span = self.end_span(member_start);
+            Some(TSTypeParameter::boxed(span, name, None, None, false, false, false, self))
+        } else {
+            None
+        };
+        self.expect(Kind::As);
+        let body = self.parse_trailing_type();
+        TSType::new_ts_distribute_type(self.end_span(start), source, member, body, self)
+    }
+
+    /// At `type`: a type return such as `: type Box<G>`. `type[]` and `type<T>` stay references
+    /// to a type named `type`.
+    pub(crate) fn next_is_start_of_type_return(&mut self) -> bool {
+        self.bump_any();
+        if self.cur_token().is_on_new_line() {
+            return false;
+        }
+        match self.cur_kind() {
+            Kind::Pipe | Kind::Amp | Kind::LAngle | Kind::Dot => false,
+            Kind::LBrack => {
+                self.bump_any();
+                !self.at(Kind::RBrack)
+            }
+            _ => self.is_start_of_type(false),
+        }
+    }
+
+    fn parse_type_return(&mut self) -> TSType<'a> {
+        let start = self.cur_start();
+        self.bump_any(); // bump `type`
+        let ty = self.parse_trailing_type();
+        TSType::new_ts_type_return(self.end_span(start), None, ty, self)
+    }
+
+    /// `[lazy] [+|-|=] PERM Operand`
+    fn parse_permission_type_operator(&mut self) -> TSType<'a> {
+        let start = self.cur_start();
+        let lazy = self.at_word("lazy");
+        if lazy {
+            self.bump_any();
+        }
+        let sign = self.cur_permission_sign();
+        if sign.is_some() {
+            self.bump_any();
+        }
+        let operator = self.cur_permission().unwrap();
+        self.bump_any();
+        let ty = self.parse_type_operator_or_higher();
+        TSType::new_ts_type_operator_type(self.end_span(start), operator, lazy, sign, ty, self)
+    }
+
+    /// `-owned T` removes ownership, `-exact T` exactness.
+    fn parse_disown_type_operator(&mut self) -> TSType<'a> {
+        let start = self.cur_start();
+        self.bump_any(); // bump `-`
+        let operator = self.cur_ownership_operator().unwrap();
+        self.bump_any();
+        let ty = self.parse_type_operator_or_higher();
+        let sign = Some(TSPermissionSign::Minus);
+        TSType::new_ts_type_operator_type(self.end_span(start), operator, false, sign, ty, self)
+    }
+
+    fn at_word(&self, word: &str) -> bool {
+        self.at(Kind::Ident) && self.cur_src() == word
+    }
+
+    /// Member permission modifier, as in `{ read a: string }` or `[write b: number]`. Like `readonly`,
+    /// the word is a modifier only when a member name can follow on the same line.
+    /// A tuple member's permission. Only one may appear.
+    pub(crate) fn parse_permission_modifier(&mut self) -> Option<(TSTypeOperatorOperator, Span)> {
+        let first = self.parse_one_permission_modifier()?;
+        while let Some((_, span)) = self.parse_one_permission_modifier() {
+            self.permission_conflict(span, first.1);
+        }
+        Some(first)
+    }
+
+    fn parse_one_permission_modifier(&mut self) -> Option<(TSTypeOperatorOperator, Span)> {
+        if !self.is_ts {
+            return None;
+        }
+        let permission = self.cur_permission()?;
+        if !self.next_token_is_on_same_line_and_can_follow_modifier() {
+            return None;
+        }
+        let start = self.cur_start();
+        self.bump_any();
+        Some((permission, self.end_span(start)))
+    }
+
+    fn permission_conflict(&mut self, span: Span, other: Span) {
+        let (word, other) =
+            (span.source_text(self.source_text), other.source_text(self.source_text));
+        self.error(diagnostics::modifier_word_cannot_be_used_with(span, word, other));
+    }
+
+    /// A member's permission among its stock modifiers, before or after them as `readonly` may be.
+    /// Reports what tsc's grammar check does: TS1243 for a second permission or one with `readonly`,
+    /// and TS1029 for an accessibility modifier, `static` or `override` after the permission.
+    pub(crate) fn parse_modifiers_and_permission(
+        &mut self,
+        mut modifiers: Modifiers,
+        parse_more: impl Fn(&mut Self) -> Modifiers,
+    ) -> (Modifiers, Option<(TSTypeOperatorOperator, Span)>) {
+        let mut permission: Option<(TSTypeOperatorOperator, Span)> = None;
+        while let Some(found) = self.parse_one_permission_modifier() {
+            if let Some((_, first)) = permission {
+                self.permission_conflict(found.1, first);
+            } else if modifiers.contains(ModifierKind::Readonly) {
+                let word = found.1.source_text(self.source_text);
+                self.error(diagnostics::modifier_word_cannot_be_used_with(
+                    found.1, word, "readonly",
+                ));
+            } else {
+                permission = Some(found);
+            }
+            let more = parse_more(self);
+            if let Some((_, first)) = permission {
+                let word = first.source_text(self.source_text);
+                for modifier in more.iter() {
+                    match modifier.kind {
+                        ModifierKind::Public
+                        | ModifierKind::Private
+                        | ModifierKind::Protected
+                        | ModifierKind::Static
+                        | ModifierKind::Override => {
+                            self.error(diagnostics::modifier_must_precede_word(
+                                modifier.span(),
+                                modifier.kind,
+                                word,
+                            ));
+                        }
+                        ModifierKind::Readonly => {
+                            self.error(diagnostics::modifier_word_cannot_be_used_with(
+                                modifier.span(),
+                                "readonly",
+                                word,
+                            ));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            modifiers.merge(&more);
+        }
+        (modifiers, permission)
+    }
+
+    /// The permission word at the current token, in either spelling. `d` is the short form of `delete`.
+    fn cur_permission(&self) -> Option<TSTypeOperatorOperator> {
+        match self.cur_kind() {
+            Kind::Delete => Some(TSTypeOperatorOperator::Delete),
+            Kind::Ident => TSTypeOperatorOperator::permission_from_str(self.cur_src()),
+            _ => None,
+        }
+    }
+
+    /// `owned`, `exact` or `transient` at the current token.
+    fn cur_ownership_operator(&self) -> Option<TSTypeOperatorOperator> {
+        if !self.at(Kind::Ident) {
+            return None;
+        }
+        match self.cur_src() {
+            "owned" => Some(TSTypeOperatorOperator::Owned),
+            "exact" => Some(TSTypeOperatorOperator::Exact),
+            "transient" => Some(TSTypeOperatorOperator::Transient),
+            _ => None,
+        }
+    }
+
+    fn cur_permission_sign(&self) -> Option<TSPermissionSign> {
+        match self.cur_kind() {
+            Kind::Plus => Some(TSPermissionSign::Plus),
+            Kind::Minus => Some(TSPermissionSign::Minus),
+            Kind::Eq => Some(TSPermissionSign::Equals),
+            _ => None,
+        }
+    }
+
+    /// At `lazy` or a sign: `lazy read T`, `+write T`, `lazy -delete T`.
+    fn is_start_of_prefixed_permission_type_operator(&mut self) -> bool {
+        if self.at_word("lazy") {
+            self.bump_any();
+            if self.cur_token().is_on_new_line() {
+                return false;
+            }
+        }
+        if self.cur_permission_sign().is_some() {
+            self.bump_any();
+            if self.cur_token().is_on_new_line() {
+                return false;
+            }
+        }
+        self.cur_permission().is_some() && self.next_token_can_follow_permission_type_operator()
+    }
+
+    fn next_is_permission_on_same_line(&mut self) -> bool {
+        self.bump_any();
+        !self.cur_token().is_on_new_line() && self.cur_permission().is_some()
+    }
+
+    /// `exact` or `-exact`, after `deep`.
+    fn next_is_exact_on_same_line(&mut self) -> bool {
+        self.bump_any();
+        if self.cur_token().is_on_new_line() {
+            return false;
+        }
+        if self.at(Kind::Minus) {
+            return self.is_start_of_disown_type_operator();
+        }
+        self.at_word("exact")
+    }
+
+    /// At `-`: `-owned T` or `-exact T`.
+    fn is_start_of_disown_type_operator(&mut self) -> bool {
+        self.bump_any();
+        matches!(
+            self.cur_ownership_operator(),
+            Some(TSTypeOperatorOperator::Owned | TSTypeOperatorOperator::Exact)
+        ) && !self.cur_token().is_on_new_line()
+            && self.next_token_can_follow_permission_type_operator()
+    }
+
+    fn next_is_open_brace_on_same_line(&mut self) -> bool {
+        self.bump_any();
+        self.at(Kind::LCurly) && !self.cur_token().is_on_new_line()
+    }
+
+    /// Keeps the operator words usable as type names: `x: read`, `read | T`, `read<T>`, `r[]`.
+    fn next_token_can_follow_permission_type_operator(&mut self) -> bool {
+        self.bump_any();
+        match self.cur_kind() {
+            Kind::Pipe | Kind::Amp | Kind::LAngle | Kind::Question | Kind::Bang | Kind::Star => {
+                return false;
+            }
+            // What follows a type: an initializer (`x: r = w (b)`), an operator (`v as r - 1`),
+            // another assertion, or a type return's `and type`. Only `-owned` and `-exact` still make an operand.
+            Kind::Eq | Kind::Plus | Kind::As | Kind::Satisfies => return false,
+            Kind::Minus => return self.is_start_of_disown_type_operator(),
+            _ if self.at_word("and") && self.lexer.peek_token().kind() == Kind::Type => {
+                return false;
+            }
+            // `r[]` is an array of a type named `r`; `rw [string]` is a writable tuple.
+            Kind::LBrack if self.cur_token().start() == self.prev_token_end => return false,
+            // After a return type named `r`, `{` is the function body unless it reads as a type literal
+            // with members or a mapped type.
+            Kind::LCurly => {
+                if self.cur_token().is_on_new_line() {
+                    return false;
+                }
+                // Inside the return type (parentheses, type arguments, members) no body can follow.
+                if !self.in_colon_return_type
+                    || self.type_depth != self.colon_return_type_depth
+                    || self.lookahead(Self::is_start_of_mapped_type)
+                {
+                    return true;
+                }
+                let errors_count = self.errors_count();
+                let literal = self.parse_type_literal();
+                return !self.has_fatal_error()
+                    && errors_count == self.errors_count()
+                    && matches!(&literal, TSType::TSTypeLiteral(lit) if !lit.members.is_empty());
+            }
+            _ => {}
+        }
+        !self.cur_token().is_on_new_line() && self.is_start_of_type(false)
     }
 
     fn parse_infer_type(&mut self) -> TSType<'a> {
@@ -595,7 +1080,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             | Kind::NoSubstitutionTemplate
             | Kind::TemplateHead => true,
             Kind::Function => !in_start_of_parameter,
-            Kind::Minus => !in_start_of_parameter && self.lexer.peek_token().kind().is_number(),
+            Kind::Minus => {
+                !in_start_of_parameter
+                    && (self.lexer.peek_token().kind().is_number()
+                        || self.lookahead(Self::is_start_of_prefixed_permission_type_operator)
+                        || self.lookahead(Self::is_start_of_disown_type_operator))
+            }
+            Kind::Plus | Kind::Eq => {
+                !in_start_of_parameter
+                    && self.lookahead(Self::is_start_of_prefixed_permission_type_operator)
+            }
             Kind::LParen => {
                 !in_start_of_parameter
                     && self.lookahead(Self::is_start_of_parenthesized_or_function_type)
@@ -609,10 +1103,21 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let kind = self.cur_kind();
         if kind == Kind::Plus || kind == Kind::Minus {
             self.bump_any();
-            return self.at(Kind::Readonly);
+            return self.at(Kind::Readonly) || self.cur_permission().is_some();
         }
 
         self.bump(Kind::Readonly);
+
+        // A permission modifier (`read`, `+write`, ...); `{ read [key: string]: T }` is still an index signature.
+        if matches!(self.cur_kind(), Kind::Plus | Kind::Minus) {
+            self.bump_any();
+            if self.cur_permission().is_none() {
+                return false;
+            }
+            self.bump_any();
+        } else if self.cur_permission().is_some() {
+            self.bump_any();
+        }
 
         if !self.eat(Kind::LBrack) && self.cur_kind().is_identifier_name() {
             return false;
@@ -644,10 +1149,26 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let mut readonly = None;
         if self.eat(Kind::Readonly) {
             readonly = Some(TSMappedTypeModifierOperator::True);
-        } else if self.eat(Kind::Plus) && self.eat(Kind::Readonly) {
-            readonly = Some(TSMappedTypeModifierOperator::Plus);
-        } else if self.eat(Kind::Minus) && self.eat(Kind::Readonly) {
-            readonly = Some(TSMappedTypeModifierOperator::Minus);
+        } else if !self.lookahead(Self::next_is_permission_on_same_line) {
+            if self.eat(Kind::Plus) && self.eat(Kind::Readonly) {
+                readonly = Some(TSMappedTypeModifierOperator::Plus);
+            } else if self.eat(Kind::Minus) && self.eat(Kind::Readonly) {
+                readonly = Some(TSMappedTypeModifierOperator::Minus);
+            }
+        }
+
+        // TightScript: `[+|-]PERM` before the key, as in `{ -write [K in keyof T]: T[K] }`.
+        let permission_sign = match self.cur_kind() {
+            Kind::Plus => Some(TSPermissionSign::Plus),
+            Kind::Minus => Some(TSPermissionSign::Minus),
+            _ => None,
+        };
+        if permission_sign.is_some() {
+            self.bump_any();
+        }
+        let permission = self.cur_permission();
+        if permission.is_some() {
+            self.bump_any();
         }
 
         self.expect(Kind::LBrack);
@@ -683,7 +1204,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.bump(Kind::Semicolon);
         self.expect(Kind::RCurly);
 
-        TSType::new_ts_mapped_type(
+        let mut mapped_type = TSMappedType::boxed(
             self.end_span(start),
             key,
             constraint,
@@ -692,7 +1213,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             optional,
             readonly,
             self,
-        )
+        );
+        mapped_type.permission = permission;
+        mapped_type.permission_sign = permission_sign;
+        TSType::TSMappedType(mapped_type)
     }
 
     fn parse_type_literal(&mut self) -> TSType<'a> {
@@ -727,15 +1251,31 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         this_ty: ArenaBox<'a, TSThisType>,
     ) -> TSType<'a> {
         self.bump_any(); // bump `is`
+        let soft = self.eat(Kind::Question);
         let ty = self.parse_ts_type();
         let type_annotation = Some(TSTypeAnnotation::boxed(ty.span(), ty, self));
-        TSType::new_ts_type_predicate(
+        self.new_type_predicate(
             self.end_span(start),
             TSTypePredicateName::This(this_ty),
             false,
             type_annotation,
-            self,
+            soft,
         )
+    }
+
+    /// A type predicate; `soft` is TightScript's `x is? T`.
+    fn new_type_predicate(
+        &self,
+        span: Span,
+        parameter_name: TSTypePredicateName<'a>,
+        asserts: bool,
+        type_annotation: Option<ArenaBox<'a, TSTypeAnnotation<'a>>>,
+        soft: bool,
+    ) -> TSType<'a> {
+        let mut predicate =
+            TSTypePredicate::boxed(span, parameter_name, asserts, type_annotation, self);
+        predicate.soft = soft;
+        TSType::TSTypePredicate(predicate)
     }
 
     fn parse_this_type_node(&mut self) -> ArenaBox<'a, TSThisType> {
@@ -806,17 +1346,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             TSTypePredicateName::Identifier(self.alloc(ident_name))
         };
         let mut type_annotation = None;
+        let mut soft = false;
         if self.eat(Kind::Is) {
+            soft = self.eat(Kind::Question);
             let type_start = self.cur_start();
-            let ty = self.parse_ts_type();
+            let ty = self.parse_trailing_type();
             type_annotation = Some(TSTypeAnnotation::boxed(self.end_span(type_start), ty, self));
         }
-        TSType::new_ts_type_predicate(
+        self.new_type_predicate(
             self.end_span(asserts_start),
             parameter_name,
             /* asserts */ true,
             type_annotation,
-            self,
+            soft,
         )
     }
 
@@ -829,9 +1371,31 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_ts_implement_name(&mut self) -> TSClassImplements<'a> {
         let start = self.cur_start();
+        let remove_exact = self.eat_heritage_minus_exact();
         let type_name = self.parse_ts_type_name();
         let type_parameters = self.parse_type_arguments_of_type_reference();
-        TSClassImplements::new(self.end_span(start), type_name, type_parameters, self)
+        let mut implements =
+            TSClassImplements::new(self.end_span(start), type_name, type_parameters, self);
+        implements.remove_exact = remove_exact;
+        implements
+    }
+
+    /// TightScript: `-exact` starting a heritage element, as in `interface A extends -exact B`.
+    pub(crate) fn eat_heritage_minus_exact(&mut self) -> bool {
+        let is_minus_exact = self.at(Kind::Minus)
+            && self.lookahead(|p| {
+                p.bump_any();
+                if !p.at_word("exact") {
+                    return false;
+                }
+                p.bump_any();
+                p.cur_kind().is_identifier_name()
+            });
+        if is_minus_exact {
+            self.bump_any(); // bump `-`
+            self.bump_any(); // bump `exact`
+        }
+        is_minus_exact
     }
 
     pub(crate) fn parse_ts_type_name(&mut self) -> TSTypeName<'a> {
@@ -1002,12 +1566,23 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     pub(super) fn parse_tuple_element(&mut self) -> TSTupleElement<'a> {
         let start = self.cur_start();
+        // `[read a: string, delete b?: number]`
+        let permission = if self.cur_permission().is_some()
+            && self.lookahead(|p| {
+                p.bump_any();
+                p.is_start_of_unmodified_named_tuple_element()
+            }) {
+            self.parse_permission_modifier()
+        } else {
+            None
+        };
         let is_rest_type = self.eat(Kind::Dot3);
 
-        if self.cur_kind().is_identifier_name()
-            && self.lookahead(Self::is_next_token_colon_or_question_colon)
+        if permission.is_some()
+            || (self.cur_kind().is_identifier_name()
+                && self.lookahead(Self::is_next_token_colon_or_question_colon))
         {
-            let member_start = self.cur_start();
+            let member_start = if permission.is_some() { start } else { self.cur_start() };
             let label = self.parse_identifier_name();
             let optional = self.eat(Kind::Question);
             self.expect(Kind::Colon);
@@ -1017,13 +1592,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let optional_after_tuple_member_name = matches!(ty, TSType::JSDocNullableType(_));
             let tuple_element = self.convert_type_to_tuple_element(ty);
             let member_span = self.end_span(member_start);
-            let named_tuple_member = TSType::new_ts_named_tuple_member(
-                member_span,
-                label,
-                tuple_element,
-                optional,
-                self,
-            );
+            let mut named_tuple_member =
+                TSNamedTupleMember::boxed(member_span, label, tuple_element, optional, self);
+            named_tuple_member.permission = permission.map(|(permission, _)| permission);
+            let named_tuple_member = TSType::TSNamedTupleMember(named_tuple_member);
             if rest_after_tuple_member_name {
                 self.error(diagnostics::rest_after_tuple_member_name(self.end_span(type_start)));
             }
@@ -1049,6 +1621,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 self.convert_type_to_tuple_element(ty)
             }
         }
+    }
+
+    fn is_start_of_unmodified_named_tuple_element(&mut self) -> bool {
+        if self.eat(Kind::Dot3) {
+            return self.cur_kind().is_identifier_name()
+                && self.is_next_token_colon_or_question_colon();
+        }
+        self.cur_kind().is_identifier_name() && self.is_next_token_colon_or_question_colon()
     }
 
     fn is_next_token_colon_or_question_colon(&mut self) -> bool {
@@ -1285,44 +1865,79 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         ObjectExpression::boxed(self.end_span(start), properties, self)
     }
 
+    /// `body_may_follow`: a function's, method's or accessor's return type, not an arrow's or a signature's.
     pub(crate) fn parse_ts_return_type_annotation(
         &mut self,
+        body_may_follow: bool,
     ) -> Option<ArenaBox<'a, TSTypeAnnotation<'a>>> {
         if !self.at(Kind::Colon) {
             return None;
         }
         let start = self.cur_start();
-        let return_type = self.parse_return_type(Kind::Colon);
+        let return_type = self.parse_return_type(Kind::Colon, body_may_follow);
         Some(TSTypeAnnotation::boxed(self.end_span(start), return_type, self))
     }
 
-    fn parse_return_type(&mut self, separator: Kind) -> TSType<'a> {
+    fn parse_return_type(&mut self, separator: Kind, body_may_follow: bool) -> TSType<'a> {
         self.expect(separator);
-        self.context_remove(Context::DisallowConditionalTypes, Self::parse_type_or_type_predicate)
+        // A function type that ends a `: T` return type ends with it, so its `=> T` is followed by the body.
+        let trailing = self.in_colon_return_type && self.type_depth == self.colon_return_type_depth;
+        let saved = (self.in_colon_return_type, self.colon_return_type_depth);
+        self.in_colon_return_type =
+            (separator == Kind::Colon && body_may_follow) || (separator == Kind::Arrow && trailing);
+        self.colon_return_type_depth = self.type_depth + 1;
+        let ty = self
+            .context_remove(Context::DisallowConditionalTypes, Self::parse_type_or_type_predicate);
+        (self.in_colon_return_type, self.colon_return_type_depth) = saved;
+        ty
+    }
+
+    /// A type that ends where the type around it ends (a predicate's type, `type T`, a distribute's
+    /// body), so at the top of a return type a body can follow it too.
+    pub(super) fn parse_trailing_type(&mut self) -> TSType<'a> {
+        if !self.in_colon_return_type || self.type_depth != self.colon_return_type_depth {
+            return self.parse_ts_type();
+        }
+        let saved = self.colon_return_type_depth;
+        self.colon_return_type_depth = self.type_depth + 1;
+        let ty = self.parse_ts_type();
+        self.colon_return_type_depth = saved;
+        ty
     }
 
     fn parse_type_or_type_predicate(&mut self) -> TSType<'a> {
         let start = self.cur_start();
         let type_predicate_variable = self.parse_type_predicate_prefix();
 
-        let ty = self.parse_ts_type();
-        if let Some(parameter_name) = type_predicate_variable {
+        let mut ty = self.parse_ts_type();
+        if let Some((parameter_name, soft)) = type_predicate_variable {
             let type_annotation = Some(TSTypeAnnotation::boxed(ty.span(), ty, self));
-            return TSType::new_ts_type_predicate(
+            ty = self.new_type_predicate(
                 self.end_span(start),
                 parameter_name,
                 false,
                 type_annotation,
-                self,
+                soft,
             );
+        }
+        // TightScript: `R and type T` after a return type.
+        if self.at_word("and")
+            && !self.cur_token().is_on_new_line()
+            && self.lexer.peek_token().kind() == Kind::Type
+        {
+            self.bump_any(); // bump `and`
+            self.bump_any(); // bump `type`
+            let type_annotation = self.parse_ts_type();
+            ty = TSType::new_ts_type_return(self.end_span(start), Some(ty), type_annotation, self);
         }
         ty
     }
 
-    /// Parse `<ident> is` or `this is` prefix of a type predicate.
+    /// Parse `<ident> is` or `this is` prefix of a type predicate, and whether it is
+    /// TightScript's soft `is?`.
     /// Returns `None` (without consuming anything) when the current token is
     /// not followed by `is` on the same line.
-    fn parse_type_predicate_prefix(&mut self) -> Option<TSTypePredicateName<'a>> {
+    fn parse_type_predicate_prefix(&mut self) -> Option<(TSTypePredicateName<'a>, bool)> {
         if !self.cur_kind().is_identifier_name() {
             return None;
         }
@@ -1337,7 +1952,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             TSTypePredicateName::Identifier(self.alloc(ident_name))
         };
         self.bump_any(); // bump `is`
-        Some(parameter_name)
+        let soft = self.eat(Kind::Question);
+        Some((parameter_name, soft))
     }
 
     pub(super) fn parse_signature_member(
@@ -1357,7 +1973,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // interface Foo { new(this: number): Foo }
             self.error(diagnostics::ts_constructor_this_parameter(this_param.span));
         }
-        let return_type = self.parse_ts_return_type_annotation();
+        let return_type = self.parse_ts_return_type_annotation(false);
         self.parse_type_member_semicolon();
         match kind {
             CallOrConstructorSignature::Call => TSSignature::new_ts_call_signature_declaration(
@@ -1388,7 +2004,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let (key, computed) = self.parse_property_name();
         let (this_param, params) =
             self.parse_formal_parameters(FunctionKind::Declaration, FormalParameterKind::Signature);
-        let return_type = self.parse_ts_return_type_annotation();
+        let return_type = self.parse_ts_return_type_annotation(false);
         self.parse_type_member_semicolon();
 
         if let Some(this_param) = &this_param {
@@ -1458,7 +2074,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let type_parameters = self.parse_ts_type_parameters();
             let (this_param, params) = self
                 .parse_formal_parameters(FunctionKind::Declaration, FormalParameterKind::Signature);
-            let return_type = self.parse_ts_return_type_annotation();
+            let return_type = self.parse_ts_return_type_annotation(false);
             self.parse_type_member_semicolon();
             TSSignature::new_ts_method_signature(
                 self.end_span(start),

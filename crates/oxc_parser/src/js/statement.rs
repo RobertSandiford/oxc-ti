@@ -195,6 +195,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 self.parse_ts_declaration_statement(self.cur_start(), stmt_ctx)
             }
+            Kind::Ident
+                if self.is_ts
+                    && self.cur_src() == "provide"
+                    && self.lookahead(Self::next_is_start_of_provide) =>
+            {
+                self.parse_ts_provide_declaration()
+            }
             _ => self.parse_expression_or_labeled_statement(),
         };
 

@@ -584,6 +584,10 @@ fn wrap_default_field_value(
                 wrap_default_field_value(value, option_def.inner_type(schema), schema);
             quote!( Some(#inner_value) )
         }
+        TypeDef::Box(box_def) => {
+            let inner_value = wrap_default_field_value(value, box_def.inner_type(schema), schema);
+            quote!( ArenaBox::new_in(#inner_value, &builder.allocator()) )
+        }
         _ => value,
     }
 }

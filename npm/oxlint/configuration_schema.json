@@ -2119,6 +2119,15 @@
         }
       ]
     },
+    "DisableRuleCommentLocation": {
+      "description": "Placement of the comment created by the \"Disable rule for this line\" fix.",
+      "type": "string",
+      "enum": [
+        "separateLine",
+        "sameLine"
+      ],
+      "markdownDescription": "Placement of the comment created by the \"Disable rule for this line\" fix."
+    },
     "DisplayNameConfig": {
       "type": "object",
       "properties": {
@@ -17116,6 +17125,15 @@
           "description": "Ensure warnings produce a non-zero exit code.\n\nEquivalent to passing `--deny-warnings` on the CLI.",
           "type": "boolean",
           "markdownDescription": "Ensure warnings produce a non-zero exit code.\n\nEquivalent to passing `--deny-warnings` on the CLI."
+        },
+        "disableRuleCommentLocation": {
+          "description": "Where the editor's \"Disable rule for this line\" fix puts its comment.\n\n- `\"separateLine\"` inserts `// oxlint-disable-next-line rule` on a new line above.\n- `\"sameLine\"` appends `// oxlint-disable-line rule` to the end of the line.\n\nDefaults to `\"separateLine\"`.\nOnly supported in the root configuration file.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DisableRuleCommentLocation"
+            }
+          ],
+          "markdownDescription": "Where the editor's \"Disable rule for this line\" fix puts its comment.\n\n- `\"separateLine\"` inserts `// oxlint-disable-next-line rule` on a new line above.\n- `\"sameLine\"` appends `// oxlint-disable-line rule` to the end of the line.\n\nDefaults to `\"separateLine\"`.\nOnly supported in the root configuration file."
         },
         "maxWarnings": {
           "description": "Specify a warning threshold. Exits with an error status if warnings exceed this value.\n\nEquivalent to passing `--max-warnings` on the CLI.",

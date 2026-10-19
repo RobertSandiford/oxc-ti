@@ -1,0 +1,6 @@
+{
+  "jsPlugins": ["./plugin.ts"],
+  "rules": {
+    "tightscript-visit/report-nodes": "error"
+  }
+}

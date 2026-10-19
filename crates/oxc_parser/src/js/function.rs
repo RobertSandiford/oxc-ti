@@ -285,14 +285,50 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             .and_await(r#async)
             .and_yield(generator.is_some())
             .and_new_target(true);
+        // TightScript: `function f: F (a) {}`, a declaration typed by an annotation.
+        let function_type = if self.is_ts
+            && matches!(
+                func_kind,
+                FunctionKind::Declaration
+                    | FunctionKind::DefaultExport
+                    | FunctionKind::TSDeclaration
+            )
+            && self.at(Kind::Colon)
+        {
+            let annotation_start = self.cur_start();
+            self.bump_any(); // bump `:`
+            let ty = self.parse_ts_type();
+            Some(TSTypeAnnotation::boxed(self.end_span(annotation_start), ty, self))
+        } else {
+            None
+        };
         let type_parameters = self.parse_ts_type_parameters();
-        let (this_param, params) = self.parse_formal_parameters(func_kind, param_kind);
-        let return_type = if self.is_ts { self.parse_ts_return_type_annotation() } else { None };
+        let params_omitted = function_type.is_some() && !self.at(Kind::LParen);
+        let (this_param, mut params) = if params_omitted {
+            // `declare function f: F;` has no parameter list.
+            let empty = Span::empty(self.prev_token_end);
+            let params = FormalParameters::boxed(
+                empty,
+                FormalParameterKind::FormalParameter,
+                ArenaVec::new_in(self),
+                None,
+                self,
+            );
+            (None, params)
+        } else {
+            self.parse_formal_parameters(func_kind, param_kind)
+        };
+        params.function_type = function_type;
+        let return_type =
+            if self.is_ts { self.parse_ts_return_type_annotation(true) } else { None };
         let body = if self.at(Kind::LCurly) || func_kind == FunctionKind::Expression {
             Some(self.parse_function_body())
         } else {
             None
         };
+        if params_omitted && body.is_some() {
+            self.error(diagnostics::function_type_body_needs_parameter_list(params.span));
+        }
         self.ctx = self
             .ctx
             .and_in(ctx.has_in())

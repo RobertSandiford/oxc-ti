@@ -828,7 +828,9 @@ impl ESTree for Statement<'_> {
             | Self::TSExternalModuleDeclaration(_)
             | Self::TSNamespaceDeclaration(_)
             | Self::TSGlobalDeclaration(_)
-            | Self::TSImportEqualsDeclaration(_) => self.to_declaration().serialize(serializer),
+            | Self::TSImportEqualsDeclaration(_)
+            | Self::TSProvideDeclaration(_)
+            | Self::TSTypeFromDeclaration(_) => self.to_declaration().serialize(serializer),
             Self::ImportDeclaration(_)
             | Self::ExportAllDeclaration(_)
             | Self::ExportDefaultDeclaration(_)
@@ -887,6 +889,8 @@ impl ESTree for Declaration<'_> {
             Self::TSNamespaceDeclaration(it) => it.serialize(serializer),
             Self::TSGlobalDeclaration(it) => it.serialize(serializer),
             Self::TSImportEqualsDeclaration(it) => it.serialize(serializer),
+            Self::TSProvideDeclaration(it) => it.serialize(serializer),
+            Self::TSTypeFromDeclaration(it) => it.serialize(serializer),
         }
     }
 }
@@ -2442,7 +2446,54 @@ impl ESTree for TSType<'_> {
             Self::JSDocNullableType(it) => it.serialize(serializer),
             Self::JSDocNonNullableType(it) => it.serialize(serializer),
             Self::JSDocUnknownType(it) => it.serialize(serializer),
+            Self::TSDistributeType(it) => it.serialize(serializer),
+            Self::TSTypeReturn(it) => it.serialize(serializer),
         }
+    }
+}
+
+impl ESTree for TSDistributeType<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("TSDistributeType"));
+        state.serialize_field("source", &self.source);
+        state.serialize_field("member", &self.member);
+        state.serialize_field("body", &self.body);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for TSTypeReturn<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("TSTypeReturn"));
+        state.serialize_field("valueType", &self.value_type);
+        state.serialize_field("typeAnnotation", &self.type_annotation);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for TSProvideDeclaration<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("TSProvideDeclaration"));
+        state.serialize_field("typeAnnotation", &self.type_annotation);
+        state.serialize_field("typeAlias", &self.type_alias);
+        state.serialize_field("typeFrom", &self.type_from);
+        state.serialize_span(self.span);
+        state.end();
+    }
+}
+
+impl ESTree for TSTypeFromDeclaration<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("TSTypeFromDeclaration"));
+        state.serialize_field("id", &self.id);
+        state.serialize_span(self.span);
+        state.end();
     }
 }
 
@@ -2502,6 +2553,36 @@ impl ESTree for TSTypeOperatorOperator {
             Self::Keyof => JsonSafeString("keyof").serialize(serializer),
             Self::Unique => JsonSafeString("unique").serialize(serializer),
             Self::Readonly => JsonSafeString("readonly").serialize(serializer),
+            Self::Read => JsonSafeString("read").serialize(serializer),
+            Self::Write => JsonSafeString("write").serialize(serializer),
+            Self::Delete => JsonSafeString("delete").serialize(serializer),
+            Self::ReadWrite => JsonSafeString("readWrite").serialize(serializer),
+            Self::ReadDelete => JsonSafeString("readDelete").serialize(serializer),
+            Self::WriteDelete => JsonSafeString("writeDelete").serialize(serializer),
+            Self::ReadWriteDelete => JsonSafeString("readWriteDelete").serialize(serializer),
+            Self::None => JsonSafeString("none").serialize(serializer),
+            Self::All => JsonSafeString("all").serialize(serializer),
+            Self::R => JsonSafeString("r").serialize(serializer),
+            Self::W => JsonSafeString("w").serialize(serializer),
+            Self::D => JsonSafeString("d").serialize(serializer),
+            Self::Rw => JsonSafeString("rw").serialize(serializer),
+            Self::Rd => JsonSafeString("rd").serialize(serializer),
+            Self::Wd => JsonSafeString("wd").serialize(serializer),
+            Self::Rwd => JsonSafeString("rwd").serialize(serializer),
+            Self::Owned => JsonSafeString("owned").serialize(serializer),
+            Self::Exact => JsonSafeString("exact").serialize(serializer),
+            Self::Transient => JsonSafeString("transient").serialize(serializer),
+            Self::Deep => JsonSafeString("deep").serialize(serializer),
+        }
+    }
+}
+
+impl ESTree for TSPermissionSign {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        match self {
+            Self::Plus => JsonSafeString("plus").serialize(serializer),
+            Self::Minus => JsonSafeString("minus").serialize(serializer),
+            Self::Equals => JsonSafeString("equals").serialize(serializer),
         }
     }
 }
@@ -2610,7 +2691,9 @@ impl ESTree for TSTupleElement<'_> {
             | Self::TSParenthesizedType(_)
             | Self::JSDocNullableType(_)
             | Self::JSDocNonNullableType(_)
-            | Self::JSDocUnknownType(_) => self.to_ts_type().serialize(serializer),
+            | Self::JSDocUnknownType(_)
+            | Self::TSDistributeType(_)
+            | Self::TSTypeReturn(_) => self.to_ts_type().serialize(serializer),
         }
     }
 }

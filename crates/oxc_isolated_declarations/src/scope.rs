@@ -195,6 +195,12 @@ impl<'a> Visit<'a> for ScopeTree<'a> {
             Declaration::TSInterfaceDeclaration(decl) => {
                 self.add_binding(decl.id.name, KindFlags::Type);
             }
+            Declaration::TSTypeFromDeclaration(decl) => {
+                self.add_binding(decl.id.name, KindFlags::Type);
+            }
+            Declaration::TSProvideDeclaration(_) => {
+                // only inside function bodies
+            }
             Declaration::TSEnumDeclaration(decl) => {
                 self.add_binding(decl.id.name, KindFlags::All);
             }

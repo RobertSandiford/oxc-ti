@@ -256,6 +256,14 @@ impl UnstableAddress for TSTypeAnnotation<'_> {}
 
 impl UnstableAddress for TSLiteralType<'_> {}
 
+impl UnstableAddress for TSDistributeType<'_> {}
+
+impl UnstableAddress for TSTypeReturn<'_> {}
+
+impl UnstableAddress for TSProvideDeclaration<'_> {}
+
+impl UnstableAddress for TSTypeFromDeclaration<'_> {}
+
 impl UnstableAddress for TSConditionalType<'_> {}
 
 impl UnstableAddress for TSUnionType<'_> {}

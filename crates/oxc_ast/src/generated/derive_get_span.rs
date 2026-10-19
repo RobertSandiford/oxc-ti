@@ -623,6 +623,8 @@ impl GetSpan for Statement<'_> {
             Self::TSNamespaceDeclaration(it) => GetSpan::span(&**it),
             Self::TSGlobalDeclaration(it) => GetSpan::span(&**it),
             Self::TSImportEqualsDeclaration(it) => GetSpan::span(&**it),
+            Self::TSProvideDeclaration(it) => GetSpan::span(&**it),
+            Self::TSTypeFromDeclaration(it) => GetSpan::span(&**it),
             Self::ImportDeclaration(it) => GetSpan::span(&**it),
             Self::ExportAllDeclaration(it) => GetSpan::span(&**it),
             Self::ExportDefaultDeclaration(it) => GetSpan::span(&**it),
@@ -669,6 +671,8 @@ impl GetSpan for Declaration<'_> {
             Self::TSNamespaceDeclaration(it) => GetSpan::span(&**it),
             Self::TSGlobalDeclaration(it) => GetSpan::span(&**it),
             Self::TSImportEqualsDeclaration(it) => GetSpan::span(&**it),
+            Self::TSProvideDeclaration(it) => GetSpan::span(&**it),
+            Self::TSTypeFromDeclaration(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -1669,7 +1673,37 @@ impl GetSpan for TSType<'_> {
             Self::JSDocNullableType(it) => GetSpan::span(&**it),
             Self::JSDocNonNullableType(it) => GetSpan::span(&**it),
             Self::JSDocUnknownType(it) => GetSpan::span(&**it),
+            Self::TSDistributeType(it) => GetSpan::span(&**it),
+            Self::TSTypeReturn(it) => GetSpan::span(&**it),
         }
+    }
+}
+
+impl GetSpan for TSDistributeType<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for TSTypeReturn<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for TSProvideDeclaration<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for TSTypeFromDeclaration<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
     }
 }
 
@@ -1792,6 +1826,8 @@ impl GetSpan for TSTupleElement<'_> {
             Self::JSDocNullableType(it) => GetSpan::span(&**it),
             Self::JSDocNonNullableType(it) => GetSpan::span(&**it),
             Self::JSDocUnknownType(it) => GetSpan::span(&**it),
+            Self::TSDistributeType(it) => GetSpan::span(&**it),
+            Self::TSTypeReturn(it) => GetSpan::span(&**it),
         }
     }
 }

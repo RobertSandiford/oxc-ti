@@ -275,6 +275,86 @@ impl TSTypeOperatorOperator {
             TSTypeOperatorOperator::Keyof => "keyof",
             TSTypeOperatorOperator::Readonly => "readonly",
             TSTypeOperatorOperator::Unique => "unique",
+            TSTypeOperatorOperator::Read => "read",
+            TSTypeOperatorOperator::Write => "write",
+            TSTypeOperatorOperator::Delete => "delete",
+            TSTypeOperatorOperator::ReadWrite => "readwrite",
+            TSTypeOperatorOperator::ReadDelete => "readdelete",
+            TSTypeOperatorOperator::WriteDelete => "writedelete",
+            TSTypeOperatorOperator::ReadWriteDelete => "readwritedelete",
+            TSTypeOperatorOperator::None => "none",
+            TSTypeOperatorOperator::All => "all",
+            TSTypeOperatorOperator::R => "r",
+            TSTypeOperatorOperator::W => "w",
+            TSTypeOperatorOperator::D => "d",
+            TSTypeOperatorOperator::Rw => "rw",
+            TSTypeOperatorOperator::Rd => "rd",
+            TSTypeOperatorOperator::Wd => "wd",
+            TSTypeOperatorOperator::Rwd => "rwd",
+            TSTypeOperatorOperator::Owned => "owned",
+            TSTypeOperatorOperator::Exact => "exact",
+            TSTypeOperatorOperator::Transient => "transient",
+            TSTypeOperatorOperator::Deep => "deep",
+        }
+    }
+
+    /// Whether this is a TightScript operator rather than `keyof`, `unique` or `readonly`.
+    pub fn is_tightscript(self) -> bool {
+        !matches!(self, Self::Keyof | Self::Unique | Self::Readonly)
+    }
+
+    /// The TightScript permission word with this spelling, long or short.
+    pub fn permission_from_str(s: &str) -> Option<Self> {
+        Some(match s {
+            "read" => Self::Read,
+            "write" => Self::Write,
+            "delete" => Self::Delete,
+            "readwrite" => Self::ReadWrite,
+            "readdelete" => Self::ReadDelete,
+            "writedelete" => Self::WriteDelete,
+            "readwritedelete" => Self::ReadWriteDelete,
+            "none" => Self::None,
+            "all" => Self::All,
+            "r" => Self::R,
+            "w" => Self::W,
+            "d" => Self::D,
+            "rw" => Self::Rw,
+            "rd" => Self::Rd,
+            "wd" => Self::Wd,
+            "rwd" => Self::Rwd,
+            _ => return None,
+        })
+    }
+
+    /// The long spelling of a short permission word (`rw` is `readwrite`); anything else unchanged.
+    #[must_use]
+    pub fn to_long_permission(self) -> Self {
+        match self {
+            Self::R => Self::Read,
+            Self::W => Self::Write,
+            Self::D => Self::Delete,
+            Self::Rw => Self::ReadWrite,
+            Self::Rd => Self::ReadDelete,
+            Self::Wd => Self::WriteDelete,
+            Self::Rwd => Self::ReadWriteDelete,
+            other => other,
+        }
+    }
+}
+
+impl TSProvideDeclaration<'_> {
+    /// `provide from` or `provide type G from`, which name the statement after them and take no `;`.
+    pub fn names_next_statement(&self) -> bool {
+        self.type_annotation.is_none() && self.type_alias.is_none()
+    }
+}
+
+impl TSPermissionSign {
+    pub fn to_str(self) -> &'static str {
+        match self {
+            TSPermissionSign::Plus => "+",
+            TSPermissionSign::Minus => "-",
+            TSPermissionSign::Equals => "=",
         }
     }
 }
