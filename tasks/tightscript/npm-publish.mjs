@@ -2,7 +2,7 @@
 // Builds oxlint or oxfmt in release mode, assembles it as oxlint-ti or oxfmt-ti, and publishes it to npm.
 // Usage: node tasks/tightscript/npm-publish.mjs <oxlint|oxfmt> [version] [--no-build] [--dry-run]
 // Without a version, the patch number of the latest published version is bumped.
-// --dry-run runs `npm publish --dry-run` and allows a dirty git tree.
+// A publish tags HEAD as <name>@<version>; --dry-run runs `npm publish --dry-run`, allows a dirty tree and doesn't tag.
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -43,6 +43,18 @@ if (dirty) {
   console.warn("Git tree isn't clean; continuing because of --dry-run.");
 }
 
+function publishedVersions() {
+  try {
+    const out = exec("npm", ["view", tool.name, "versions", "--json"], {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    return [JSON.parse(out)].flat();
+  } catch (e) {
+    if (String(e.stderr).includes("E404")) return [];
+    throw e;
+  }
+}
+
 function nextVersion() {
   let latest;
   try {
@@ -66,6 +78,9 @@ function nextVersion() {
 
 const version = requestedVersion ?? nextVersion();
 if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(version)) fail(`${version} isn't a valid version.`);
+const tag = `${tool.name}@${version}`;
+if (exec("git", ["tag", "--list", tag]).trim()) fail(`Git tag ${tag} already exists.`);
+if (publishedVersions().includes(version)) fail(`${tag} is already on npm.`);
 
 const appDir = join(root, "apps", appName);
 if (!flags.has("--no-build")) exec("pnpm", ["run", "build"], { cwd: appDir, stdio: "inherit" });
@@ -106,4 +121,9 @@ writeFileSync(join(out, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`);
 console.log(`Assembled ${tool.name}@${version} at ${out}`);
 
 exec("npm", ["publish", ...(dryRun ? ["--dry-run"] : [])], { cwd: out, stdio: "inherit" });
-console.log(`${dryRun ? "Dry run of" : "Published"} ${tool.name}@${version}`);
+if (dryRun) {
+  console.log(`Dry run of ${tag}; not tagged`);
+} else {
+  exec("git", ["tag", tag]);
+  console.log(`Published ${tag} and tagged HEAD as ${tag}; push it with: git push origin ${tag}`);
+}
