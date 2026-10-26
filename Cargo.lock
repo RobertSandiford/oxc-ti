@@ -2789,10 +2789,8 @@ dependencies = [
  "oxc",
  "oxc_napi",
  "oxc_sourcemap",
- "oxc_ti_compile",
  "oxc_ts_blank",
  "rustc-hash",
- "tungsten_passes",
 ]
 
 [[package]]
@@ -4086,28 +4084,6 @@ dependencies = [
  "thread_local",
  "tracing-core",
  "tracing-log",
-]
-
-[[package]]
-name = "tungsten_passes"
-version = "0.154.0"
-dependencies = [
- "dragonbox_ecma",
- "indexmap",
- "oxc_allocator",
- "oxc_ast",
- "oxc_ast_visit",
- "oxc_codegen",
- "oxc_diagnostics",
- "oxc_semantic",
- "oxc_span",
- "oxc_str",
- "oxc_ti_compile",
- "oxc_traverse",
- "rustc-hash",
- "serde",
- "serde_json",
- "tempfile",
 ]
 
 [[package]]

@@ -155,12 +155,6 @@ export interface CompilerAssumptions {
   setPublicClassFields?: boolean
 }
 
-/**
- * TightScript: compile one module for the browser. Tungsten's passes run if asked, types are
- * removed and JSX is compiled to the automatic runtime; nothing is lowered.
- */
-export declare function compileSync(filename: string, sourceText: string, options?: TightScriptCompileOptions | undefined | null): TightScriptCompileResult
-
 export interface DecoratorOptions {
   /**
    * Enables experimental support for decorators, which is a version of decorators that predates the TC39 standardization process.
@@ -489,24 +483,6 @@ export interface StyledComponentsOptions {
    * **Note: This feature is not yet implemented in oxc.**
    */
   topLevelImportPaths?: Array<string>
-}
-
-export interface TightScriptCompileOptions {
-  /** The module JSX compiles to imports from, `<source>/jsx-runtime`. Default: `react`. */
-  jsxImportSource?: string
-  /** Default: `false`. */
-  sourceMap?: boolean
-  /** Options for tungsten's passes as JSON; the shapes are documented in the `tungsten_passes` crate. */
-  tungsten?: string
-}
-
-export interface TightScriptCompileResult {
-  code: string
-  /** The source map as JSON. */
-  map?: string
-  errors: Array<OxcError>
-  /** What tungsten's passes collected, as JSON, when `tungsten` options were given. */
-  tungsten?: string
 }
 
 /**

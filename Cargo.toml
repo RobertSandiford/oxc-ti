@@ -158,7 +158,6 @@ oxc_transformer = { version = "0.154.0", path = "crates/oxc_transformer" } # Cod
 oxc_transformer_plugins = { version = "0.154.0", path = "crates/oxc_transformer_plugins" } # Transformer plugins
 oxc_traverse = { version = "0.154.0", path = "crates/oxc_traverse" } # AST traversal
 oxc_ti_compile = { version = "0.154.0", path = "crates/oxc_ti_compile" } # TightScript: browser module compile pipeline
-tungsten_passes = { version = "0.154.0", path = "crates/tungsten_passes" } # TightScript: tungsten's dev Babel plugins as compile passes
 oxc_ts_blank = { version = "0.154.0", path = "crates/oxc_ts_blank" } # TightScript: erases types as whitespace
 
 # publish = false

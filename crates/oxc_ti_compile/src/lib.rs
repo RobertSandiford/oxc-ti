@@ -63,7 +63,8 @@ pub fn compile(
 ) -> CompileResult {
     let allocator = Allocator::default();
     let source_text = allocator.alloc_str(source_text);
-    let mut source_type = SourceType::from_path(path).unwrap_or_default();
+    // Babel's default sourceType is "module": a file with no import or export still gets ESM output.
+    let mut source_type = SourceType::from_path(path).unwrap_or_default().with_module(true);
     // Like Babel's React preset, JSX is allowed in plain .js; .ts keeps `<T>x` as a type assertion.
     if source_type.is_javascript() {
         source_type = source_type.with_jsx(true);

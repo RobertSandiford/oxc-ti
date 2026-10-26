@@ -35,6 +35,16 @@ fn accepts_jsx_in_js_files_as_babel_does() {
 }
 
 #[test]
+fn treats_files_without_imports_or_exports_as_modules_as_babel_does() {
+    for path in ["a.tsx", "a.jsx", "a.js"] {
+        let ret = compile(Path::new(path), "const a = <i />;\n", &options(), &mut NoPasses);
+        assert!(ret.errors.is_empty(), "{path}: {:?}", ret.errors);
+        assert!(ret.code.contains("import "), "{path}: {}", ret.code);
+        assert!(!ret.code.contains("require("), "{path}: {}", ret.code);
+    }
+}
+
+#[test]
 fn produces_a_source_map() {
     let ret =
         compile(Path::new("m.ts"), "export const a: number = 1;\n", &options(), &mut NoPasses);
