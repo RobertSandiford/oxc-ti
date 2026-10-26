@@ -453,8 +453,7 @@ impl Rule for ExhaustiveDeps {
                 match inner_expr {
                     Expression::ArrayExpression(array_expr) => Some(array_expr),
                     Expression::Identifier(ident)
-                        if ident.name == "undefined"
-                            && ctx.is_reference_to_global_variable(ident) =>
+                        if ident.is_undefined() && ctx.is_reference_to_global_variable(ident) =>
                     {
                         None
                     }
@@ -1101,13 +1100,7 @@ fn is_stable_value<'a, 'b>(
     }
 
     match node.kind() {
-        AstKind::VariableDeclaration(declaration) => {
-            if declaration.kind == VariableDeclarationKind::Const {
-                return true;
-            }
-
-            false
-        }
+        AstKind::VariableDeclaration(declaration) => declaration.kind.is_const(),
         AstKind::VariableDeclarator(declaration) => {
             // if the variable does not have an initializer, then it's not a stable value
             let Some(init) = &declaration.init else {
@@ -1202,18 +1195,23 @@ fn is_stable_value<'a, 'b>(
 
             false
         }
-        AstKind::ArrowFunctionExpression(_) | AstKind::Function(_) => {
-            let function_body = match node.kind() {
-                AstKind::ArrowFunctionExpression(arrow_func) => {
-                    Some(CallbackBody::Arrow(&arrow_func.body))
-                }
-                AstKind::Function(func) => func.body.as_deref().map(CallbackBody::Function),
-                _ => unreachable!(),
-            };
+        AstKind::ArrowFunctionExpression(arrow_func) => is_function_stable(
+            CallbackBody::Arrow(&arrow_func.body),
+            None,
+            ctx,
+            component_scope_id,
+            visited,
+        ),
+        AstKind::Function(func) => {
+            let Some(function_body) = func.body.as_deref() else { return false };
 
-            let Some(function_body) = function_body else { return false };
-
-            is_function_stable(function_body, None, ctx, component_scope_id, visited)
+            is_function_stable(
+                CallbackBody::Function(function_body),
+                None,
+                ctx,
+                component_scope_id,
+                visited,
+            )
         }
         _ => false,
     }

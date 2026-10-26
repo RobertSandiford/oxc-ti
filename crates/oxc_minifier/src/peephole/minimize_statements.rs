@@ -1,6 +1,5 @@
 use std::iter;
 
-use crate::generated::ancestor::Ancestor;
 use oxc_allocator::{ArenaBox, ArenaVec, TakeIn};
 use oxc_ast::ast::*;
 use oxc_ast_visit::{VisitJs, walk_js};
@@ -11,7 +10,9 @@ use oxc_ecmascript::{
 use oxc_semantic::ScopeFlags;
 use oxc_span::{ContentEq, GetSpan, GetSpanMut, SPAN};
 
-use crate::{TraverseCtx, is_terminated::IsTerminated, keep_var::KeepVar};
+use crate::{
+    TraverseCtx, generated::ancestor::Ancestor, is_terminated::IsTerminated, keep_var::KeepVar,
+};
 
 use super::PeepholeOptimizations;
 
@@ -354,8 +355,7 @@ impl<'a> PeepholeOptimizations {
             };
             if kind.name == id.name {
                 if decl.init.is_none()
-                    && (declaration_kind == VariableDeclarationKind::Var
-                        || assign_expr.right.is_literal_value(true, ctx))
+                    && (declaration_kind.is_var() || assign_expr.right.is_literal_value(true, ctx))
                 {
                     // "var a; a = b();" => "var a = b();"
                     decl.init = Some(assign_expr.right.take_in(ctx));
@@ -1355,7 +1355,7 @@ impl<'a> PeepholeOptimizations {
                 }
             }
             Expression::UnaryExpression(unary_expr) => {
-                if unary_expr.operator != UnaryOperator::Delete
+                if !unary_expr.operator.is_delete()
                     && let Some(changed) = Self::substitute_single_use_symbol_in_expression(
                         &mut unary_expr.argument,
                         search_for,
