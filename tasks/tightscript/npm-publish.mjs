@@ -49,7 +49,31 @@ if (dirty) {
   console.warn("Git tree isn't clean; continuing because of --dry-run.");
 }
 
-const build = () => exec("pnpm", ["run", "build"], { cwd: appDir, stdio: "inherit" });
+const builtFromFile = join(root, "target/npm", `${appName}.built-from`);
+
+function build() {
+  exec("pnpm", ["run", "build"], { cwd: appDir, stdio: "inherit" });
+  mkdirSync(dirname(builtFromFile), { recursive: true });
+  writeFileSync(builtFromFile, exec("git", ["rev-parse", "HEAD"]).trim());
+}
+
+// Edits to this folder and to markdown files don't change the binary.
+function failIfBuildIsStale() {
+  if (!existsSync(builtFromFile)) fail(`No record of building ${appName}; build it first.`);
+  const builtFrom = readFileSync(builtFromFile, "utf8").trim();
+  const changed = exec("git", [
+    "diff",
+    "--name-only",
+    builtFrom,
+    "HEAD",
+    "--",
+    ".",
+    ":!tasks/tightscript",
+    ":!*.md",
+  ]).trim();
+  if (changed) fail(`${appName} was built before these changes; build it again:\n${changed}`);
+}
+
 if (buildOnly) {
   build();
   console.log(
@@ -98,6 +122,7 @@ if (exec("git", ["tag", "--list", tag]).trim()) fail(`Git tag ${tag} already exi
 if (publishedVersions().includes(version)) fail(`${tag} is already on npm.`);
 
 if (!flags.has("--no-build")) build();
+else if (!dryRun) failIfBuildIsStale();
 const binary = join(appDir, "dist", `${appName}.win32-x64-msvc.node`);
 if (!existsSync(binary)) fail(`Missing ${binary}; build without --no-build.`);
 

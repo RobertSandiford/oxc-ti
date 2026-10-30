@@ -8,6 +8,8 @@
     "build-wasm-dev": "pnpm --workspace-concurrency=1 --filter \"./napi/*\" build-wasm-dev",
     "build-wasip1-dev": "pnpm --workspace-concurrency=1 --filter oxc-parser --filter oxc-minify --filter oxc-transform --filter oxc-transform-react --filter oxc-transform-relay build-wasip1-dev",
     "test": "pnpm --workspace-concurrency=1 --filter \"./napi/*\" --filter \"./apps/*\" --filter \"./packages/*\" test",
+    "ti-build": "node tasks/tightscript/npm-release.mjs build",
+    "ti-publish": "node tasks/tightscript/npm-release.mjs publish",
     "fmt": "oxfmt -c oxfmtrc.jsonc",
     "lint": "oxlint -c oxlintrc.json --deny-warnings --report-unused-disable-directives"
   },
