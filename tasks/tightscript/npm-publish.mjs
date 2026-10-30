@@ -1,8 +1,9 @@
 // oxlint-disable no-console
 // Builds oxlint or oxfmt in release mode, assembles it as oxlint-ti or oxfmt-ti, and publishes it to npm.
-// Usage: node tasks/tightscript/npm-publish.mjs <oxlint|oxfmt> [version] [--no-build] [--dry-run]
+// Usage: node tasks/tightscript/npm-publish.mjs <oxlint|oxfmt> [version] [--no-build | --build-only] [--dry-run]
 // Without a version, the patch number of the latest published version is bumped.
 // A publish tags HEAD as <name>@<version>; --dry-run runs `npm publish --dry-run`, allows a dirty tree and doesn't tag.
+// --build-only stops after the build, so both tools can build first and publish later with --no-build.
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -21,11 +22,16 @@ const [app, requestedVersion] = args.filter((arg) => !arg.startsWith("--"));
 const tool = tools[app?.replace(/-ti$/, "")];
 if (!tool) {
   fail(
-    "Usage: node tasks/tightscript/npm-publish.mjs <oxlint|oxfmt> [version] [--no-build] [--dry-run]",
+    "Usage: node tasks/tightscript/npm-publish.mjs <oxlint|oxfmt> [version] [--no-build | --build-only] [--dry-run]",
   );
 }
 const appName = app.replace(/-ti$/, "");
+const appDir = join(root, "apps", appName);
 const dryRun = flags.has("--dry-run");
+const buildOnly = flags.has("--build-only");
+if (buildOnly && flags.has("--no-build")) {
+  fail("--build-only and --no-build cancel each other out.");
+}
 
 function fail(message) {
   console.error(message);
@@ -41,6 +47,15 @@ const dirty = exec("git", ["status", "--porcelain"]).trim();
 if (dirty) {
   if (!dryRun) fail(`Git tree isn't clean; commit or stash first:\n${dirty}`);
   console.warn("Git tree isn't clean; continuing because of --dry-run.");
+}
+
+const build = () => exec("pnpm", ["run", "build"], { cwd: appDir, stdio: "inherit" });
+if (buildOnly) {
+  build();
+  console.log(
+    `Built ${appName}; publish it with: node tasks/tightscript/npm-publish.mjs ${appName} <version> --no-build`,
+  );
+  process.exit(0);
 }
 
 function publishedVersions() {
@@ -82,8 +97,7 @@ const tag = `${tool.name}@${version}`;
 if (exec("git", ["tag", "--list", tag]).trim()) fail(`Git tag ${tag} already exists.`);
 if (publishedVersions().includes(version)) fail(`${tag} is already on npm.`);
 
-const appDir = join(root, "apps", appName);
-if (!flags.has("--no-build")) exec("pnpm", ["run", "build"], { cwd: appDir, stdio: "inherit" });
+if (!flags.has("--no-build")) build();
 const binary = join(appDir, "dist", `${appName}.win32-x64-msvc.node`);
 if (!existsSync(binary)) fail(`Missing ${binary}; build without --no-build.`);
 
