@@ -36,6 +36,7 @@ static PRECEDENCE_TABLE: [Option<Precedence>; 256] = {
     table[Kind::Star2 as usize] = Some(Precedence::Exponentiation);
     table[Kind::As as usize] = Some(Precedence::Compare);
     table[Kind::Satisfies as usize] = Some(Precedence::Compare);
+    table[Kind::Override as usize] = Some(Precedence::Compare);
     table
 };
 

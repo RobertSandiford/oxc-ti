@@ -1408,6 +1408,13 @@ impl GetNodeId for TSSignature<'_> {
     }
 }
 
+impl GetNodeId for TSSpreadSignature<'_> {
+    #[inline]
+    fn node_id(&self) -> NodeId {
+        self.node_id()
+    }
+}
+
 impl GetNodeId for TSIndexSignature<'_> {
     #[inline]
     fn node_id(&self) -> NodeId {

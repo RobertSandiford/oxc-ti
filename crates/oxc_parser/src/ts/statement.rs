@@ -186,7 +186,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             | Kind::True
             | Kind::False => true,
             kind if kind.is_number() => true,
-            Kind::As | Kind::Satisfies => false,
+            Kind::As | Kind::Satisfies | Kind::Override => false,
             kind => kind.is_identifier(),
         }
     }
@@ -456,12 +456,21 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let start = self.cur_start();
         let body_list =
             self.parse_normal_list(Kind::LCurly, Kind::RCurly, Self::parse_ts_type_signature);
+        for signature in &body_list {
+            if let TSSignature::TSSpreadSignature(spread) = signature {
+                self.error(diagnostics::type_spread_in_interface(spread.span));
+            }
+        }
         TSInterfaceBody::boxed(self.end_span(start), body_list, self)
     }
 
     pub(crate) fn parse_ts_type_signature(&mut self) -> TSSignature<'a> {
         let start = self.cur_start();
         let kind = self.cur_kind();
+
+        if kind == Kind::Dot3 {
+            return self.parse_ts_spread_signature();
+        }
 
         if matches!(kind, Kind::LParen | Kind::LAngle) {
             return self.parse_signature_member(CallOrConstructorSignature::Call);
@@ -913,6 +922,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_ts_type_assertion(&mut self) -> Expression<'a> {
         let start = self.cur_start();
         self.expect(Kind::LAngle);
+        let (is_override, unchecked) = self.eat_override_assertion_keyword();
         let type_annotation = self.parse_ts_type();
         self.expect(Kind::RAngle);
         let lhs_start = self.cur_start();
@@ -923,7 +933,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.error(diagnostics::jsx_type_assertion_in_mts_cts(span));
         }
 
-        Expression::new_ts_type_assertion(span, type_annotation, expression, self)
+        Expression::new_ts_type_assertion(
+            span,
+            type_annotation,
+            expression,
+            is_override,
+            unchecked,
+            self,
+        )
     }
 
     pub(crate) fn parse_ts_import_equals_declaration(

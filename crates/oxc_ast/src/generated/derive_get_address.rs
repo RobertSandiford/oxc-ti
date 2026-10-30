@@ -817,6 +817,7 @@ impl GetAddress for TSSignature<'_> {
             Self::TSCallSignatureDeclaration(it) => GetAddress::address(it),
             Self::TSConstructSignatureDeclaration(it) => GetAddress::address(it),
             Self::TSMethodSignature(it) => GetAddress::address(it),
+            Self::TSSpreadSignature(it) => GetAddress::address(it),
         }
     }
 }

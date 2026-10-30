@@ -1205,6 +1205,24 @@ pub enum TSSignature<'a> {
     TSCallSignatureDeclaration(Box<'a, TSCallSignatureDeclaration<'a>>) = 2,
     TSConstructSignatureDeclaration(Box<'a, TSConstructSignatureDeclaration<'a>>) = 3,
     TSMethodSignature(Box<'a, TSMethodSignature<'a>>) = 4,
+    TSSpreadSignature(Box<'a, TSSpreadSignature<'a>>) = 5,
+}
+
+/// TightScript: a spread of another object type inside an object type literal.
+///
+/// ## Example
+/// ```ts
+/// type S = { ...A, b: string, ...B };
+/// //         ^^^^         ^^^^^^ type_annotation
+/// ```
+#[ast(visit)]
+#[derive(Debug)]
+#[generate_derive(CloneIn, Dummy, ReplaceWith, TakeIn)]
+#[generate_derive(ContentEq, ESTree, GetNodeId, GetSpan, GetSpanMut, UnstableAddress)]
+pub struct TSSpreadSignature<'a> {
+    pub node_id: Cell<NodeId>,
+    pub span: Span,
+    pub type_annotation: TSType<'a>,
 }
 
 /// An index signature within a class, type alias, etc.
@@ -1846,6 +1864,12 @@ pub struct TSAsExpression<'a> {
     pub span: Span,
     pub expression: Expression<'a>,
     pub type_annotation: TSType<'a>,
+    /// TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    #[estree(skip)]
+    pub r#override: bool,
+    /// TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
+    #[estree(skip)]
+    pub unchecked: bool,
 }
 
 /// TypeScript `satisfies` Expression
@@ -1890,6 +1914,12 @@ pub struct TSTypeAssertion<'a> {
     pub span: Span,
     pub type_annotation: TSType<'a>,
     pub expression: Expression<'a>,
+    /// TightScript: `<override T>x` and `<override! T>x`.
+    #[estree(skip)]
+    pub r#override: bool,
+    /// TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
+    #[estree(skip)]
+    pub unchecked: bool,
 }
 
 #[ast(visit)]

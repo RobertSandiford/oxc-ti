@@ -1557,6 +1557,13 @@ const _: () = {
     assert!(size_of::<TSSignature>() == 16);
     assert!(align_of::<TSSignature>() == 8);
 
+    // Padding: 4 bytes
+    assert!(size_of::<TSSpreadSignature>() == 32);
+    assert!(align_of::<TSSpreadSignature>() == 8);
+    assert!(offset_of!(TSSpreadSignature, span) == 0);
+    assert!(offset_of!(TSSpreadSignature, node_id) == 8);
+    assert!(offset_of!(TSSpreadSignature, type_annotation) == 16);
+
     // Padding: 1 bytes
     assert!(size_of::<TSIndexSignature>() == 64);
     assert!(align_of::<TSIndexSignature>() == 8);
@@ -1776,11 +1783,13 @@ const _: () = {
     assert!(offset_of!(TSTemplateLiteralType, quasis) == 16);
     assert!(offset_of!(TSTemplateLiteralType, types) == 40);
 
-    // Padding: 4 bytes
+    // Padding: 2 bytes
     assert!(size_of::<TSAsExpression>() == 48);
     assert!(align_of::<TSAsExpression>() == 8);
     assert!(offset_of!(TSAsExpression, span) == 0);
     assert!(offset_of!(TSAsExpression, node_id) == 8);
+    assert!(offset_of!(TSAsExpression, r#override) == 12);
+    assert!(offset_of!(TSAsExpression, unchecked) == 13);
     assert!(offset_of!(TSAsExpression, expression) == 16);
     assert!(offset_of!(TSAsExpression, type_annotation) == 32);
 
@@ -1792,11 +1801,13 @@ const _: () = {
     assert!(offset_of!(TSSatisfiesExpression, expression) == 16);
     assert!(offset_of!(TSSatisfiesExpression, type_annotation) == 32);
 
-    // Padding: 4 bytes
+    // Padding: 2 bytes
     assert!(size_of::<TSTypeAssertion>() == 48);
     assert!(align_of::<TSTypeAssertion>() == 8);
     assert!(offset_of!(TSTypeAssertion, span) == 0);
     assert!(offset_of!(TSTypeAssertion, node_id) == 8);
+    assert!(offset_of!(TSTypeAssertion, r#override) == 12);
+    assert!(offset_of!(TSTypeAssertion, unchecked) == 13);
     assert!(offset_of!(TSTypeAssertion, type_annotation) == 16);
     assert!(offset_of!(TSTypeAssertion, expression) == 32);
 
@@ -3459,6 +3470,13 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(size_of::<TSSignature>() == 8);
     assert!(align_of::<TSSignature>() == 4);
 
+    // Padding: 0 bytes
+    assert!(size_of::<TSSpreadSignature>() == 20);
+    assert!(align_of::<TSSpreadSignature>() == 4);
+    assert!(offset_of!(TSSpreadSignature, span) == 0);
+    assert!(offset_of!(TSSpreadSignature, node_id) == 8);
+    assert!(offset_of!(TSSpreadSignature, type_annotation) == 12);
+
     // Padding: 1 bytes
     assert!(size_of::<TSIndexSignature>() == 48);
     assert!(align_of::<TSIndexSignature>() == 4);
@@ -3678,13 +3696,15 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSTemplateLiteralType, quasis) == 12);
     assert!(offset_of!(TSTemplateLiteralType, types) == 28);
 
-    // Padding: 0 bytes
-    assert!(size_of::<TSAsExpression>() == 28);
+    // Padding: 2 bytes
+    assert!(size_of::<TSAsExpression>() == 32);
     assert!(align_of::<TSAsExpression>() == 4);
     assert!(offset_of!(TSAsExpression, span) == 0);
     assert!(offset_of!(TSAsExpression, node_id) == 8);
-    assert!(offset_of!(TSAsExpression, expression) == 12);
-    assert!(offset_of!(TSAsExpression, type_annotation) == 20);
+    assert!(offset_of!(TSAsExpression, r#override) == 12);
+    assert!(offset_of!(TSAsExpression, unchecked) == 13);
+    assert!(offset_of!(TSAsExpression, expression) == 16);
+    assert!(offset_of!(TSAsExpression, type_annotation) == 24);
 
     // Padding: 0 bytes
     assert!(size_of::<TSSatisfiesExpression>() == 28);
@@ -3694,13 +3714,15 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(TSSatisfiesExpression, expression) == 12);
     assert!(offset_of!(TSSatisfiesExpression, type_annotation) == 20);
 
-    // Padding: 0 bytes
-    assert!(size_of::<TSTypeAssertion>() == 28);
+    // Padding: 2 bytes
+    assert!(size_of::<TSTypeAssertion>() == 32);
     assert!(align_of::<TSTypeAssertion>() == 4);
     assert!(offset_of!(TSTypeAssertion, span) == 0);
     assert!(offset_of!(TSTypeAssertion, node_id) == 8);
-    assert!(offset_of!(TSTypeAssertion, type_annotation) == 12);
-    assert!(offset_of!(TSTypeAssertion, expression) == 20);
+    assert!(offset_of!(TSTypeAssertion, r#override) == 12);
+    assert!(offset_of!(TSTypeAssertion, unchecked) == 13);
+    assert!(offset_of!(TSTypeAssertion, type_annotation) == 16);
+    assert!(offset_of!(TSTypeAssertion, expression) == 24);
 
     // Padding: 3 bytes
     assert!(size_of::<TSImportEqualsDeclaration>() == 52);

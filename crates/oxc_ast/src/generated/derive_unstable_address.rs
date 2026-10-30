@@ -334,6 +334,8 @@ impl UnstableAddress for TSInterfaceBody<'_> {}
 
 impl UnstableAddress for TSPropertySignature<'_> {}
 
+impl UnstableAddress for TSSpreadSignature<'_> {}
+
 impl UnstableAddress for TSIndexSignature<'_> {}
 
 impl UnstableAddress for TSCallSignatureDeclaration<'_> {}

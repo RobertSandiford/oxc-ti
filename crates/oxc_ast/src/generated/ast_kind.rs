@@ -8,7 +8,7 @@ use oxc_syntax::node::NodeId;
 use crate::ast::*;
 
 /// The largest integer value that can be mapped to an `AstType`/`AstKind` enum variant.
-pub const AST_TYPE_MAX: u8 = 195;
+pub const AST_TYPE_MAX: u8 = 196;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -176,39 +176,40 @@ pub enum AstType {
     TSInterfaceDeclaration = 160,
     TSInterfaceBody = 161,
     TSPropertySignature = 162,
-    TSIndexSignature = 163,
-    TSCallSignatureDeclaration = 164,
-    TSMethodSignature = 165,
-    TSConstructSignatureDeclaration = 166,
-    TSIndexSignatureName = 167,
-    TSInterfaceHeritage = 168,
-    TSTypePredicate = 169,
-    TSExternalModuleDeclaration = 170,
-    TSNamespaceDeclaration = 171,
-    TSGlobalDeclaration = 172,
-    TSModuleBlock = 173,
-    TSTypeLiteral = 174,
-    TSInferType = 175,
-    TSTypeQuery = 176,
-    TSImportType = 177,
-    TSImportTypeQualifiedName = 178,
-    TSFunctionType = 179,
-    TSConstructorType = 180,
-    TSMappedType = 181,
-    TSTemplateLiteralType = 182,
-    TSAsExpression = 183,
-    TSSatisfiesExpression = 184,
-    TSTypeAssertion = 185,
-    TSImportEqualsDeclaration = 186,
-    TSExternalModuleReference = 187,
-    TSNonNullExpression = 188,
-    Decorator = 189,
-    TSExportAssignment = 190,
-    TSNamespaceExportDeclaration = 191,
-    TSInstantiationExpression = 192,
-    JSDocNullableType = 193,
-    JSDocNonNullableType = 194,
-    JSDocUnknownType = 195,
+    TSSpreadSignature = 163,
+    TSIndexSignature = 164,
+    TSCallSignatureDeclaration = 165,
+    TSMethodSignature = 166,
+    TSConstructSignatureDeclaration = 167,
+    TSIndexSignatureName = 168,
+    TSInterfaceHeritage = 169,
+    TSTypePredicate = 170,
+    TSExternalModuleDeclaration = 171,
+    TSNamespaceDeclaration = 172,
+    TSGlobalDeclaration = 173,
+    TSModuleBlock = 174,
+    TSTypeLiteral = 175,
+    TSInferType = 176,
+    TSTypeQuery = 177,
+    TSImportType = 178,
+    TSImportTypeQualifiedName = 179,
+    TSFunctionType = 180,
+    TSConstructorType = 181,
+    TSMappedType = 182,
+    TSTemplateLiteralType = 183,
+    TSAsExpression = 184,
+    TSSatisfiesExpression = 185,
+    TSTypeAssertion = 186,
+    TSImportEqualsDeclaration = 187,
+    TSExternalModuleReference = 188,
+    TSNonNullExpression = 189,
+    Decorator = 190,
+    TSExportAssignment = 191,
+    TSNamespaceExportDeclaration = 192,
+    TSInstantiationExpression = 193,
+    JSDocNullableType = 194,
+    JSDocNonNullableType = 195,
+    JSDocUnknownType = 196,
 }
 
 /// Untyped AST Node Kind
@@ -389,6 +390,7 @@ pub enum AstKind<'a> {
     TSInterfaceDeclaration(&'a TSInterfaceDeclaration<'a>) = AstType::TSInterfaceDeclaration as u8,
     TSInterfaceBody(&'a TSInterfaceBody<'a>) = AstType::TSInterfaceBody as u8,
     TSPropertySignature(&'a TSPropertySignature<'a>) = AstType::TSPropertySignature as u8,
+    TSSpreadSignature(&'a TSSpreadSignature<'a>) = AstType::TSSpreadSignature as u8,
     TSIndexSignature(&'a TSIndexSignature<'a>) = AstType::TSIndexSignature as u8,
     TSCallSignatureDeclaration(&'a TSCallSignatureDeclaration<'a>) =
         AstType::TSCallSignatureDeclaration as u8,
@@ -601,6 +603,7 @@ impl AstKind<'_> {
             Self::TSInterfaceDeclaration(it) => it.node_id(),
             Self::TSInterfaceBody(it) => it.node_id(),
             Self::TSPropertySignature(it) => it.node_id(),
+            Self::TSSpreadSignature(it) => it.node_id(),
             Self::TSIndexSignature(it) => it.node_id(),
             Self::TSCallSignatureDeclaration(it) => it.node_id(),
             Self::TSMethodSignature(it) => it.node_id(),
@@ -805,6 +808,7 @@ impl AstKind<'_> {
             Self::TSInterfaceDeclaration(it) => it.set_node_id(node_id),
             Self::TSInterfaceBody(it) => it.set_node_id(node_id),
             Self::TSPropertySignature(it) => it.set_node_id(node_id),
+            Self::TSSpreadSignature(it) => it.set_node_id(node_id),
             Self::TSIndexSignature(it) => it.set_node_id(node_id),
             Self::TSCallSignatureDeclaration(it) => it.set_node_id(node_id),
             Self::TSMethodSignature(it) => it.set_node_id(node_id),
@@ -1011,6 +1015,7 @@ impl GetSpan for AstKind<'_> {
             Self::TSInterfaceDeclaration(it) => it.span(),
             Self::TSInterfaceBody(it) => it.span(),
             Self::TSPropertySignature(it) => it.span(),
+            Self::TSSpreadSignature(it) => it.span(),
             Self::TSIndexSignature(it) => it.span(),
             Self::TSCallSignatureDeclaration(it) => it.span(),
             Self::TSMethodSignature(it) => it.span(),
@@ -1218,6 +1223,7 @@ impl GetAddress for AstKind<'_> {
             Self::TSInterfaceDeclaration(it) => it.unstable_address(),
             Self::TSInterfaceBody(it) => it.unstable_address(),
             Self::TSPropertySignature(it) => it.unstable_address(),
+            Self::TSSpreadSignature(it) => it.unstable_address(),
             Self::TSIndexSignature(it) => it.unstable_address(),
             Self::TSCallSignatureDeclaration(it) => it.unstable_address(),
             Self::TSMethodSignature(it) => it.unstable_address(),
@@ -2075,6 +2081,11 @@ impl<'a> AstKind<'a> {
     #[inline]
     pub fn as_ts_property_signature(self) -> Option<&'a TSPropertySignature<'a>> {
         if let Self::TSPropertySignature(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_ts_spread_signature(self) -> Option<&'a TSSpreadSignature<'a>> {
+        if let Self::TSSpreadSignature(v) = self { Some(v) } else { None }
     }
 
     #[inline]

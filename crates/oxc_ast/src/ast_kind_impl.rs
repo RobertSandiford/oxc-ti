@@ -623,6 +623,7 @@ impl<'a> AstKind<'a> {
             Self::TSNamedTupleMember(_) => "TSNamedTupleMember".into(),
 
             Self::TSPropertySignature(_) => "TSPropertySignature".into(),
+            Self::TSSpreadSignature(_) => "TSSpreadSignature".into(),
             Self::TSIndexSignatureName(_) => "TSIndexSignatureName".into(),
             Self::TSConditionalType(_) => "TSConditionalType".into(),
             Self::TSMappedType(_) => "TSMappedType".into(),

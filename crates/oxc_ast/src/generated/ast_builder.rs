@@ -1080,17 +1080,23 @@ impl<'a> Expression<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -1126,17 +1132,23 @@ impl<'a> Expression<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -2582,17 +2594,23 @@ impl<'a> ArrayExpressionElement<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -2628,17 +2646,23 @@ impl<'a> ArrayExpressionElement<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -3991,17 +4015,23 @@ impl<'a> PropertyKey<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -4037,17 +4067,23 @@ impl<'a> PropertyKey<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -5876,17 +5912,23 @@ impl<'a> Argument<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -5922,17 +5964,23 @@ impl<'a> Argument<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -6449,17 +6497,23 @@ impl<'a> AssignmentTarget<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -6511,17 +6565,23 @@ impl<'a> AssignmentTarget<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -6699,17 +6759,23 @@ impl<'a> SimpleAssignmentTarget<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -6761,17 +6827,23 @@ impl<'a> SimpleAssignmentTarget<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -7102,17 +7174,23 @@ impl<'a> AssignmentTargetMaybeDefault<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -7164,17 +7242,23 @@ impl<'a> AssignmentTargetMaybeDefault<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -11270,17 +11354,23 @@ impl<'a> ForStatementInit<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -11316,17 +11406,23 @@ impl<'a> ForStatementInit<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -11657,17 +11753,23 @@ impl<'a> ForStatementLeft<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -11719,17 +11821,23 @@ impl<'a> ForStatementLeft<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -14365,17 +14473,23 @@ impl<'a> ArrowFunctionBody<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -14411,17 +14525,23 @@ impl<'a> ArrowFunctionBody<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -18159,17 +18279,23 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -18205,17 +18331,23 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -20241,17 +20373,23 @@ impl<'a> JSXExpression<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_as_expression(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSAsExpression(TSAsExpression::boxed(
             span,
             expression,
             type_annotation,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -20287,17 +20425,23 @@ impl<'a> JSXExpression<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new_ts_type_assertion(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         Self::TSTypeAssertion(TSTypeAssertion::boxed(
             span,
             type_annotation,
             expression,
+            r#override,
+            unchecked,
             builder.builder(),
         ))
     }
@@ -25776,6 +25920,56 @@ impl<'a> TSSignature<'a> {
             builder.builder(),
         ))
     }
+
+    /// Build a [`TSSignature::TSSpreadSignature`].
+    ///
+    /// This node contains a [`TSSpreadSignature`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_annotation`
+    #[inline]
+    pub fn new_ts_spread_signature(
+        span: Span,
+        type_annotation: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> Self {
+        Self::TSSpreadSignature(TSSpreadSignature::boxed(span, type_annotation, builder.builder()))
+    }
+}
+
+impl<'a> TSSpreadSignature<'a> {
+    /// Build a [`TSSpreadSignature`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`TSSpreadSignature::boxed`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_annotation`
+    #[inline]
+    pub fn new(span: Span, type_annotation: TSType<'a>, builder: &impl GetAstBuilder<'a>) -> Self {
+        let builder = builder.builder();
+        TSSpreadSignature { node_id: Cell::new(builder.node_id()), span, type_annotation }
+    }
+
+    /// Build a [`TSSpreadSignature`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`TSSpreadSignature::new`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    /// * `type_annotation`
+    #[inline]
+    pub fn boxed(
+        span: Span,
+        type_annotation: TSType<'a>,
+        builder: &impl GetAstBuilder<'a>,
+    ) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(Self::new(span, type_annotation, builder), &builder.allocator())
+    }
 }
 
 impl<'a> TSIndexSignature<'a> {
@@ -27888,15 +28082,26 @@ impl<'a> TSAsExpression<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         let builder = builder.builder();
-        TSAsExpression { node_id: Cell::new(builder.node_id()), span, expression, type_annotation }
+        TSAsExpression {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            expression,
+            type_annotation,
+            r#override,
+            unchecked,
+        }
     }
 
     /// Build a [`TSAsExpression`], and store it in the memory arena.
@@ -27908,16 +28113,20 @@ impl<'a> TSAsExpression<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `expression`
     /// * `type_annotation`
+    /// * `override`: TightScript: `x override T` and `x override! T` use `override` in place of `as`.
+    /// * `unchecked`: TightScript: the `!` of `x override! T`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn boxed(
         span: Span,
         expression: Expression<'a>,
         type_annotation: TSType<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> ArenaBox<'a, Self> {
         let builder = builder.builder();
         ArenaBox::new_in(
-            Self::new(span, expression, type_annotation, builder),
+            Self::new(span, expression, type_annotation, r#override, unchecked, builder),
             &builder.allocator(),
         )
     }
@@ -27983,15 +28192,26 @@ impl<'a> TSTypeAssertion<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn new(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> Self {
         let builder = builder.builder();
-        TSTypeAssertion { node_id: Cell::new(builder.node_id()), span, type_annotation, expression }
+        TSTypeAssertion {
+            node_id: Cell::new(builder.node_id()),
+            span,
+            type_annotation,
+            expression,
+            r#override,
+            unchecked,
+        }
     }
 
     /// Build a [`TSTypeAssertion`], and store it in the memory arena.
@@ -28003,16 +28223,20 @@ impl<'a> TSTypeAssertion<'a> {
     /// * `span`: The [`Span`] covering this node
     /// * `type_annotation`
     /// * `expression`
+    /// * `override`: TightScript: `<override T>x` and `<override! T>x`.
+    /// * `unchecked`: TightScript: the `!` of `<override! T>x`, an unchecked cast. Only set with `override`.
     #[inline]
     pub fn boxed(
         span: Span,
         type_annotation: TSType<'a>,
         expression: Expression<'a>,
+        r#override: bool,
+        unchecked: bool,
         builder: &impl GetAstBuilder<'a>,
     ) -> ArenaBox<'a, Self> {
         let builder = builder.builder();
         ArenaBox::new_in(
-            Self::new(span, type_annotation, expression, builder),
+            Self::new(span, type_annotation, expression, r#override, unchecked, builder),
             &builder.allocator(),
         )
     }

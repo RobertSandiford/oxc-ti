@@ -418,6 +418,8 @@ impl<'a> TakeIn<'a> for TSPropertySignature<'a> {}
 
 impl<'a> TakeIn<'a> for TSSignature<'a> {}
 
+impl<'a> TakeIn<'a> for TSSpreadSignature<'a> {}
+
 impl<'a> TakeIn<'a> for TSIndexSignature<'a> {}
 
 impl<'a> TakeIn<'a> for TSCallSignatureDeclaration<'a> {}

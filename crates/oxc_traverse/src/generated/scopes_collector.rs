@@ -1945,6 +1945,11 @@ impl<'a> Visit<'a> for ChildScopeCollector {
     }
 
     #[inline]
+    fn visit_ts_spread_signature(&mut self, it: &TSSpreadSignature<'a>) {
+        self.visit_ts_type(&it.type_annotation);
+    }
+
+    #[inline]
     fn visit_ts_index_signature(&mut self, it: &TSIndexSignature<'a>) {
         self.visit_ts_index_signature_name(&it.parameter);
         self.visit_ts_type_annotation(&it.type_annotation);

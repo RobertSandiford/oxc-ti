@@ -1275,6 +1275,113 @@ mod test {
     }
 
     #[test]
+    fn tightscript_override_casts() {
+        let allocator = Allocator::default();
+        let cast = |source: &'static str| {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+            let Statement::ExpressionStatement(statement) = &ret.program.body[0] else {
+                panic!("{source}: expected an expression statement");
+            };
+            match &statement.expression {
+                Expression::TSAsExpression(it) => (it.r#override, it.unchecked),
+                Expression::TSTypeAssertion(it) => (it.r#override, it.unchecked),
+                other => panic!("{source}: expected a cast, found {other:?}"),
+            }
+        };
+        assert_eq!(cast("u override string;"), (true, false));
+        assert_eq!(cast("s override! number;"), (true, true));
+        assert_eq!(cast("s override !number;"), (true, true));
+        assert_eq!(cast("<override string>u;"), (true, false));
+        assert_eq!(cast("<override! number>s;"), (true, true));
+        assert_eq!(cast("u as string;"), (false, false));
+        assert_eq!(cast("<string>u;"), (false, false));
+        // Binds like `as`, so the operand is `s`, not `s + 1`.
+        let ret = Parser::new(&allocator, "s override! number + 1;", SourceType::ts()).parse();
+        assert!(ret.diagnostics.is_empty(), "{:?}", ret.diagnostics);
+        let Statement::ExpressionStatement(statement) = &ret.program.body[0] else {
+            panic!("expected an expression statement");
+        };
+        let Expression::BinaryExpression(sum) = &statement.expression else {
+            panic!("expected `(s override! number) + 1`");
+        };
+        assert!(matches!(sum.left, Expression::TSAsExpression(_)));
+    }
+
+    #[test]
+    fn tightscript_override_casts_end_at_a_line_break() {
+        let allocator = Allocator::default();
+        let source = "let a = s\noverride(1)";
+        let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+        assert!(ret.diagnostics.is_empty(), "{:?}", ret.diagnostics);
+        assert_eq!(ret.program.body.len(), 2);
+    }
+
+    #[test]
+    fn tightscript_override_is_still_a_name() {
+        let allocator = Allocator::default();
+        for source in [
+            "type override = string;",
+            "declare function override(x: number): void;",
+            "const x = <override>y;",
+            "const x = <override[]>y;",
+            "class C { override m() {} }",
+            "let override = 1; override++;",
+        ] {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+        }
+        // `distribute` and `provide` are values when `override` follows.
+        for source in ["distribute override T;", "provide override T;"] {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+            let Statement::ExpressionStatement(statement) = &ret.program.body[0] else {
+                panic!("{source}: expected an expression statement");
+            };
+            assert!(matches!(statement.expression, Expression::TSAsExpression(_)), "{source}");
+        }
+    }
+
+    #[test]
+    fn tightscript_type_literal_spreads() {
+        let allocator = Allocator::default();
+        let spreads = |source: &'static str, source_type: SourceType| {
+            let ret = Parser::new(&allocator, source, source_type).parse();
+            assert!(ret.diagnostics.is_empty(), "{source}: {:?}", ret.diagnostics);
+            format!("{:?}", ret.program.body).matches("TSSpreadSignature {").count()
+        };
+        let ts = SourceType::ts();
+        assert_eq!(spreads("type S1 = { ...A, ...B };", ts), 2);
+        assert_eq!(spreads("type S2 = { ...A; ...B };", ts), 2);
+        assert_eq!(spreads("type S3 = {\n...A\n...B\n};", ts), 2);
+        assert_eq!(spreads("type S4 = { ...A, b: number, ...B, c?: boolean };", ts), 2);
+        assert_eq!(spreads("type S5 = { ...A | undefined, ...(B | null) };", ts), 2);
+        assert_eq!(spreads("type S7 = { ...{ ...A, ...B } };", ts), 3);
+        assert_eq!(
+            spreads("declare function f<T extends { ...A }>(x: { ...T, ...B }): { ...T };", ts),
+            4
+        );
+        assert_eq!(spreads("type T = [A, ...B[]]; function f(...a: A[]) {}", ts), 0);
+        assert_eq!(spreads("type D = { ...A }", SourceType::d_ts()), 1);
+    }
+
+    #[test]
+    fn tightscript_type_literal_spread_errors() {
+        let allocator = Allocator::default();
+        let errors = |source: &'static str| {
+            let ret = Parser::new(&allocator, source, SourceType::ts()).parse();
+            ret.diagnostics.iter().map(|d| d.message.to_string()).collect::<Vec<_>>()
+        };
+        let in_interface = errors("interface I { ...A, b: string }");
+        assert!(
+            in_interface.iter().any(|m| m.contains("spread is only allowed in an object type")),
+            "{in_interface:?}"
+        );
+        assert!(!errors("type T = { ... };").is_empty());
+        assert!(!errors("type T = { ..., b: string };").is_empty());
+    }
+
+    #[test]
     fn tightscript_tsx_hinted_type_parameters_with_comma_are_arrows() {
         let allocator = Allocator::default();
         for source in [

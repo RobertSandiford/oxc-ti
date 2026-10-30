@@ -2610,8 +2610,11 @@ impl GenExpr for TSAsExpression<'_> {
             self.expression.print_expr(p, Precedence::Exponentiation, ctx);
             p.print_soft_space();
             p.print_space_before_identifier();
-            p.print_str("as");
-            if type_starts_with_non_identifier(&self.type_annotation) {
+            p.print_str(if self.r#override { "override" } else { "as" });
+            if self.unchecked {
+                p.print_ascii_byte(b'!');
+                p.print_soft_space();
+            } else if type_starts_with_non_identifier(&self.type_annotation) {
                 p.print_soft_space();
             } else {
                 p.print_hard_space();
@@ -2678,6 +2681,15 @@ impl GenExpr for TSTypeAssertion<'_> {
             //          ^ make sure space is printed here.
             if matches!(self.type_annotation, TSType::TSFunctionType(_)) {
                 p.print_hard_space();
+            }
+            if self.r#override {
+                p.print_str("override");
+                if self.unchecked {
+                    p.print_ascii_byte(b'!');
+                    p.print_soft_space();
+                } else {
+                    p.print_hard_space();
+                }
             }
             self.type_annotation.print(p, ctx);
             p.print_ascii_byte(b'>');
@@ -4013,6 +4025,10 @@ impl Gen for TSSignature<'_> {
         match self {
             Self::TSIndexSignature(signature) => signature.print(p, ctx),
             Self::TSPropertySignature(signature) => signature.r#gen(p, ctx),
+            Self::TSSpreadSignature(signature) => {
+                p.print_str("...");
+                signature.type_annotation.print(p, ctx);
+            }
             Self::TSCallSignatureDeclaration(signature) => {
                 if let Some(type_parameters) = signature.type_parameters.as_ref() {
                     type_parameters.print(p, ctx);

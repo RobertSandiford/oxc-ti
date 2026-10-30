@@ -2018,7 +2018,15 @@ impl GetSpan for TSSignature<'_> {
             Self::TSCallSignatureDeclaration(it) => GetSpan::span(&**it),
             Self::TSConstructSignatureDeclaration(it) => GetSpan::span(&**it),
             Self::TSMethodSignature(it) => GetSpan::span(&**it),
+            Self::TSSpreadSignature(it) => GetSpan::span(&**it),
         }
+    }
+}
+
+impl GetSpan for TSSpreadSignature<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
     }
 }
 

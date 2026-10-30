@@ -1018,6 +1018,11 @@ parser_diagnostics! {
             .with_label(span)
     };
 
+    type_spread_in_interface(span: Span) => {
+        ts_error("12510", "A spread is only allowed in an object type literal.")
+            .with_label(span)
+    };
+
     function_type_body_needs_parameter_list(span: Span) => {
         ts_error("12252", "A function with a body needs a parameter list after its type annotation.")
             .with_label(span)

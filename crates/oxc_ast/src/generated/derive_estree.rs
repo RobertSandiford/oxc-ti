@@ -2976,7 +2976,18 @@ impl ESTree for TSSignature<'_> {
             Self::TSCallSignatureDeclaration(it) => it.serialize(serializer),
             Self::TSConstructSignatureDeclaration(it) => it.serialize(serializer),
             Self::TSMethodSignature(it) => it.serialize(serializer),
+            Self::TSSpreadSignature(it) => it.serialize(serializer),
         }
+    }
+}
+
+impl ESTree for TSSpreadSignature<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) {
+        let mut state = serializer.serialize_struct();
+        state.serialize_field("type", &JsonSafeString("TSSpreadSignature"));
+        state.serialize_field("typeAnnotation", &self.type_annotation);
+        state.serialize_span(self.span);
+        state.end();
     }
 }
 

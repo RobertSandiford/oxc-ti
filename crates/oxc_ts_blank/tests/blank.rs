@@ -191,6 +191,21 @@ fn tightscript_types_and_members() {
 }
 
 #[test]
+fn tightscript_type_literal_spreads() {
+    test("let x: { ...A, b: string, ...B } = { a: 'x' };", "let x = { a: 'x' };");
+    test("type S = { ...A }; interface I extends J {} let y = 1;", "; ; let y = 1;");
+}
+
+#[test]
+fn tightscript_override_casts() {
+    test(
+        "const a = u override string, b = s override! number, c = <override string>u, d = <override! number>s;",
+        "const a = u, b = s, c = u, d = s;",
+    );
+    test_exact("const a = s override! number + 1;", "const a = s                  + 1;");
+}
+
+#[test]
 fn tightscript_function_types() {
     test("export function f1: F (a) { return a }", "export function f1(a) { return a }");
     test("export function f3: (GF) <T>(a: T) { return a }", "export function f3(a) { return a }");

@@ -2323,8 +2323,15 @@ impl ContentEq for TSSignature<'_> {
                 Self::TSConstructSignatureDeclaration(b),
             ) => a.content_eq(b),
             (Self::TSMethodSignature(a), Self::TSMethodSignature(b)) => a.content_eq(b),
+            (Self::TSSpreadSignature(a), Self::TSSpreadSignature(b)) => a.content_eq(b),
             _ => false,
         }
+    }
+}
+
+impl ContentEq for TSSpreadSignature<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
     }
 }
 
@@ -2560,6 +2567,8 @@ impl ContentEq for TSAsExpression<'_> {
     fn content_eq(&self, other: &Self) -> bool {
         ContentEq::content_eq(&self.expression, &other.expression)
             && ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
+            && ContentEq::content_eq(&self.r#override, &other.r#override)
+            && ContentEq::content_eq(&self.unchecked, &other.unchecked)
     }
 }
 
@@ -2574,6 +2583,8 @@ impl ContentEq for TSTypeAssertion<'_> {
     fn content_eq(&self, other: &Self) -> bool {
         ContentEq::content_eq(&self.type_annotation, &other.type_annotation)
             && ContentEq::content_eq(&self.expression, &other.expression)
+            && ContentEq::content_eq(&self.r#override, &other.r#override)
+            && ContentEq::content_eq(&self.unchecked, &other.unchecked)
     }
 }
 

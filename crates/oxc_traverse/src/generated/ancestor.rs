@@ -269,72 +269,73 @@ pub(crate) enum AncestorType {
     TSInterfaceBodyBody = 245,
     TSPropertySignatureKey = 246,
     TSPropertySignatureTypeAnnotation = 247,
-    TSIndexSignatureParameter = 248,
-    TSIndexSignatureTypeAnnotation = 249,
-    TSCallSignatureDeclarationTypeParameters = 250,
-    TSCallSignatureDeclarationThisParam = 251,
-    TSCallSignatureDeclarationParams = 252,
-    TSCallSignatureDeclarationReturnType = 253,
-    TSMethodSignatureKey = 254,
-    TSMethodSignatureTypeParameters = 255,
-    TSMethodSignatureThisParam = 256,
-    TSMethodSignatureParams = 257,
-    TSMethodSignatureReturnType = 258,
-    TSConstructSignatureDeclarationTypeParameters = 259,
-    TSConstructSignatureDeclarationParams = 260,
-    TSConstructSignatureDeclarationReturnType = 261,
-    TSIndexSignatureNameTypeAnnotation = 262,
-    TSInterfaceHeritageTypeName = 263,
-    TSInterfaceHeritageTypeArguments = 264,
-    TSTypePredicateParameterName = 265,
-    TSTypePredicateTypeAnnotation = 266,
-    TSExternalModuleDeclarationId = 267,
-    TSExternalModuleDeclarationBody = 268,
-    TSNamespaceDeclarationId = 269,
-    TSNamespaceDeclarationBody = 270,
-    TSGlobalDeclarationBody = 271,
-    TSModuleBlockDirectives = 272,
-    TSModuleBlockBody = 273,
-    TSTypeLiteralMembers = 274,
-    TSInferTypeTypeParameter = 275,
-    TSTypeQueryExprName = 276,
-    TSTypeQueryTypeArguments = 277,
-    TSImportTypeSource = 278,
-    TSImportTypeOptions = 279,
-    TSImportTypeQualifier = 280,
-    TSImportTypeTypeArguments = 281,
-    TSImportTypeQualifiedNameLeft = 282,
-    TSImportTypeQualifiedNameRight = 283,
-    TSFunctionTypeTypeParameters = 284,
-    TSFunctionTypeThisParam = 285,
-    TSFunctionTypeParams = 286,
-    TSFunctionTypeReturnType = 287,
-    TSConstructorTypeTypeParameters = 288,
-    TSConstructorTypeParams = 289,
-    TSConstructorTypeReturnType = 290,
-    TSMappedTypeKey = 291,
-    TSMappedTypeConstraint = 292,
-    TSMappedTypeNameType = 293,
-    TSMappedTypeTypeAnnotation = 294,
-    TSTemplateLiteralTypeQuasis = 295,
-    TSTemplateLiteralTypeTypes = 296,
-    TSAsExpressionExpression = 297,
-    TSAsExpressionTypeAnnotation = 298,
-    TSSatisfiesExpressionExpression = 299,
-    TSSatisfiesExpressionTypeAnnotation = 300,
-    TSTypeAssertionTypeAnnotation = 301,
-    TSTypeAssertionExpression = 302,
-    TSImportEqualsDeclarationId = 303,
-    TSImportEqualsDeclarationModuleReference = 304,
-    TSExternalModuleReferenceExpression = 305,
-    TSNonNullExpressionExpression = 306,
-    DecoratorExpression = 307,
-    TSExportAssignmentExpression = 308,
-    TSNamespaceExportDeclarationId = 309,
-    TSInstantiationExpressionExpression = 310,
-    TSInstantiationExpressionTypeArguments = 311,
-    JSDocNullableTypeTypeAnnotation = 312,
-    JSDocNonNullableTypeTypeAnnotation = 313,
+    TSSpreadSignatureTypeAnnotation = 248,
+    TSIndexSignatureParameter = 249,
+    TSIndexSignatureTypeAnnotation = 250,
+    TSCallSignatureDeclarationTypeParameters = 251,
+    TSCallSignatureDeclarationThisParam = 252,
+    TSCallSignatureDeclarationParams = 253,
+    TSCallSignatureDeclarationReturnType = 254,
+    TSMethodSignatureKey = 255,
+    TSMethodSignatureTypeParameters = 256,
+    TSMethodSignatureThisParam = 257,
+    TSMethodSignatureParams = 258,
+    TSMethodSignatureReturnType = 259,
+    TSConstructSignatureDeclarationTypeParameters = 260,
+    TSConstructSignatureDeclarationParams = 261,
+    TSConstructSignatureDeclarationReturnType = 262,
+    TSIndexSignatureNameTypeAnnotation = 263,
+    TSInterfaceHeritageTypeName = 264,
+    TSInterfaceHeritageTypeArguments = 265,
+    TSTypePredicateParameterName = 266,
+    TSTypePredicateTypeAnnotation = 267,
+    TSExternalModuleDeclarationId = 268,
+    TSExternalModuleDeclarationBody = 269,
+    TSNamespaceDeclarationId = 270,
+    TSNamespaceDeclarationBody = 271,
+    TSGlobalDeclarationBody = 272,
+    TSModuleBlockDirectives = 273,
+    TSModuleBlockBody = 274,
+    TSTypeLiteralMembers = 275,
+    TSInferTypeTypeParameter = 276,
+    TSTypeQueryExprName = 277,
+    TSTypeQueryTypeArguments = 278,
+    TSImportTypeSource = 279,
+    TSImportTypeOptions = 280,
+    TSImportTypeQualifier = 281,
+    TSImportTypeTypeArguments = 282,
+    TSImportTypeQualifiedNameLeft = 283,
+    TSImportTypeQualifiedNameRight = 284,
+    TSFunctionTypeTypeParameters = 285,
+    TSFunctionTypeThisParam = 286,
+    TSFunctionTypeParams = 287,
+    TSFunctionTypeReturnType = 288,
+    TSConstructorTypeTypeParameters = 289,
+    TSConstructorTypeParams = 290,
+    TSConstructorTypeReturnType = 291,
+    TSMappedTypeKey = 292,
+    TSMappedTypeConstraint = 293,
+    TSMappedTypeNameType = 294,
+    TSMappedTypeTypeAnnotation = 295,
+    TSTemplateLiteralTypeQuasis = 296,
+    TSTemplateLiteralTypeTypes = 297,
+    TSAsExpressionExpression = 298,
+    TSAsExpressionTypeAnnotation = 299,
+    TSSatisfiesExpressionExpression = 300,
+    TSSatisfiesExpressionTypeAnnotation = 301,
+    TSTypeAssertionTypeAnnotation = 302,
+    TSTypeAssertionExpression = 303,
+    TSImportEqualsDeclarationId = 304,
+    TSImportEqualsDeclarationModuleReference = 305,
+    TSExternalModuleReferenceExpression = 306,
+    TSNonNullExpressionExpression = 307,
+    DecoratorExpression = 308,
+    TSExportAssignmentExpression = 309,
+    TSNamespaceExportDeclarationId = 310,
+    TSInstantiationExpressionExpression = 311,
+    TSInstantiationExpressionTypeArguments = 312,
+    JSDocNullableTypeTypeAnnotation = 313,
+    JSDocNonNullableTypeTypeAnnotation = 314,
 }
 
 /// Ancestor type used in AST traversal.
@@ -811,6 +812,8 @@ pub enum Ancestor<'a, 't> {
         AncestorType::TSPropertySignatureKey as u16,
     TSPropertySignatureTypeAnnotation(TSPropertySignatureWithoutTypeAnnotation<'a, 't>) =
         AncestorType::TSPropertySignatureTypeAnnotation as u16,
+    TSSpreadSignatureTypeAnnotation(TSSpreadSignatureWithoutTypeAnnotation<'a, 't>) =
+        AncestorType::TSSpreadSignatureTypeAnnotation as u16,
     TSIndexSignatureParameter(TSIndexSignatureWithoutParameter<'a, 't>) =
         AncestorType::TSIndexSignatureParameter as u16,
     TSIndexSignatureTypeAnnotation(TSIndexSignatureWithoutTypeAnnotation<'a, 't>) =
@@ -1767,6 +1770,11 @@ impl<'a, 't> Ancestor<'a, 't> {
     }
 
     #[inline]
+    pub fn is_ts_spread_signature(self) -> bool {
+        matches!(self, Self::TSSpreadSignatureTypeAnnotation(_))
+    }
+
+    #[inline]
     pub fn is_ts_index_signature(self) -> bool {
         matches!(self, Self::TSIndexSignatureParameter(_) | Self::TSIndexSignatureTypeAnnotation(_))
     }
@@ -2277,6 +2285,7 @@ impl<'a, 't> Ancestor<'a, 't> {
                 | Self::TSTypeParameterConstraint(_)
                 | Self::TSTypeParameterDefault(_)
                 | Self::TSTypeAliasDeclarationTypeAnnotation(_)
+                | Self::TSSpreadSignatureTypeAnnotation(_)
                 | Self::TSMappedTypeConstraint(_)
                 | Self::TSMappedTypeNameType(_)
                 | Self::TSMappedTypeTypeAnnotation(_)
@@ -2595,6 +2604,7 @@ impl<'a, 't> GetAddress for Ancestor<'a, 't> {
             Self::TSInterfaceBodyBody(a) => a.address(),
             Self::TSPropertySignatureKey(a) => a.address(),
             Self::TSPropertySignatureTypeAnnotation(a) => a.address(),
+            Self::TSSpreadSignatureTypeAnnotation(a) => a.address(),
             Self::TSIndexSignatureParameter(a) => a.address(),
             Self::TSIndexSignatureTypeAnnotation(a) => a.address(),
             Self::TSCallSignatureDeclarationTypeParameters(a) => a.address(),
@@ -15766,6 +15776,39 @@ impl<'a, 't> GetAddress for TSPropertySignatureWithoutTypeAnnotation<'a, 't> {
     }
 }
 
+pub(crate) const OFFSET_TS_SPREAD_SIGNATURE_NODE_ID: usize = offset_of!(TSSpreadSignature, node_id);
+pub(crate) const OFFSET_TS_SPREAD_SIGNATURE_SPAN: usize = offset_of!(TSSpreadSignature, span);
+pub(crate) const OFFSET_TS_SPREAD_SIGNATURE_TYPE_ANNOTATION: usize =
+    offset_of!(TSSpreadSignature, type_annotation);
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct TSSpreadSignatureWithoutTypeAnnotation<'a, 't>(
+    pub(crate) *const TSSpreadSignature<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> TSSpreadSignatureWithoutTypeAnnotation<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_TS_SPREAD_SIGNATURE_NODE_ID) as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_SPREAD_SIGNATURE_SPAN) as *const Span) }
+    }
+}
+
+impl<'a, 't> GetAddress for TSSpreadSignatureWithoutTypeAnnotation<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
 pub(crate) const OFFSET_TS_INDEX_SIGNATURE_NODE_ID: usize = offset_of!(TSIndexSignature, node_id);
 pub(crate) const OFFSET_TS_INDEX_SIGNATURE_SPAN: usize = offset_of!(TSIndexSignature, span);
 pub(crate) const OFFSET_TS_INDEX_SIGNATURE_PARAMETER: usize =
@@ -18765,6 +18808,8 @@ pub(crate) const OFFSET_TS_AS_EXPRESSION_SPAN: usize = offset_of!(TSAsExpression
 pub(crate) const OFFSET_TS_AS_EXPRESSION_EXPRESSION: usize = offset_of!(TSAsExpression, expression);
 pub(crate) const OFFSET_TS_AS_EXPRESSION_TYPE_ANNOTATION: usize =
     offset_of!(TSAsExpression, type_annotation);
+pub(crate) const OFFSET_TS_AS_EXPRESSION_OVERRIDE: usize = offset_of!(TSAsExpression, r#override);
+pub(crate) const OFFSET_TS_AS_EXPRESSION_UNCHECKED: usize = offset_of!(TSAsExpression, unchecked);
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug)]
@@ -18792,6 +18837,16 @@ impl<'a, 't> TSAsExpressionWithoutExpression<'a, 't> {
             &*((self.0 as *const u8).add(OFFSET_TS_AS_EXPRESSION_TYPE_ANNOTATION)
                 as *const TSType<'a>)
         }
+    }
+
+    #[inline]
+    pub fn r#override(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_AS_EXPRESSION_OVERRIDE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn unchecked(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_AS_EXPRESSION_UNCHECKED) as *const bool) }
     }
 }
 
@@ -18828,6 +18883,16 @@ impl<'a, 't> TSAsExpressionWithoutTypeAnnotation<'a, 't> {
             &*((self.0 as *const u8).add(OFFSET_TS_AS_EXPRESSION_EXPRESSION)
                 as *const Expression<'a>)
         }
+    }
+
+    #[inline]
+    pub fn r#override(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_AS_EXPRESSION_OVERRIDE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn unchecked(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_AS_EXPRESSION_UNCHECKED) as *const bool) }
     }
 }
 
@@ -18927,6 +18992,8 @@ pub(crate) const OFFSET_TS_TYPE_ASSERTION_TYPE_ANNOTATION: usize =
     offset_of!(TSTypeAssertion, type_annotation);
 pub(crate) const OFFSET_TS_TYPE_ASSERTION_EXPRESSION: usize =
     offset_of!(TSTypeAssertion, expression);
+pub(crate) const OFFSET_TS_TYPE_ASSERTION_OVERRIDE: usize = offset_of!(TSTypeAssertion, r#override);
+pub(crate) const OFFSET_TS_TYPE_ASSERTION_UNCHECKED: usize = offset_of!(TSTypeAssertion, unchecked);
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug)]
@@ -18954,6 +19021,16 @@ impl<'a, 't> TSTypeAssertionWithoutTypeAnnotation<'a, 't> {
             &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ASSERTION_EXPRESSION)
                 as *const Expression<'a>)
         }
+    }
+
+    #[inline]
+    pub fn r#override(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ASSERTION_OVERRIDE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn unchecked(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ASSERTION_UNCHECKED) as *const bool) }
     }
 }
 
@@ -18990,6 +19067,16 @@ impl<'a, 't> TSTypeAssertionWithoutExpression<'a, 't> {
             &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ASSERTION_TYPE_ANNOTATION)
                 as *const TSType<'a>)
         }
+    }
+
+    #[inline]
+    pub fn r#override(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ASSERTION_OVERRIDE) as *const bool) }
+    }
+
+    #[inline]
+    pub fn unchecked(self) -> &'t bool {
+        unsafe { &*((self.0 as *const u8).add(OFFSET_TS_TYPE_ASSERTION_UNCHECKED) as *const bool) }
     }
 }
 

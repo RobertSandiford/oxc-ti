@@ -1360,18 +1360,31 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 break;
             }
 
-            if matches!(kind, Kind::As | Kind::Satisfies) {
+            if matches!(kind, Kind::As | Kind::Satisfies | Kind::Override) {
                 if self.cur_token().is_on_new_line() {
                     break;
                 }
+                // TightScript's `override` cast only exists in TypeScript; elsewhere `override` is a name.
+                if kind == Kind::Override && !self.is_ts {
+                    break;
+                }
                 self.bump_any();
+                let unchecked = kind == Kind::Override && self.eat(Kind::Bang);
                 let type_annotation = self.parse_ts_type();
                 let span = self.end_span(lhs_start);
-                lhs = if kind == Kind::As {
+                lhs = if kind != Kind::Satisfies {
                     if !self.is_ts {
                         self.error(diagnostics::as_in_ts(span));
                     }
-                    Expression::new_ts_as_expression(span, lhs, type_annotation, self)
+                    let is_override = kind == Kind::Override;
+                    Expression::new_ts_as_expression(
+                        span,
+                        lhs,
+                        type_annotation,
+                        is_override,
+                        unchecked,
+                        self,
+                    )
                 } else {
                     if !self.is_ts {
                         self.error(diagnostics::satisfies_in_ts(span));

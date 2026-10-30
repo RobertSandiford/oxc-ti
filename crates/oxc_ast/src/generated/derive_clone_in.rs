@@ -5011,6 +5011,31 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSSignature<'_> {
                 with_semantic_ids,
                 allocator,
             )),
+            Self::TSSpreadSignature(it) => TSSignature::TSSpreadSignature(CloneIn::clone_in_impl(
+                it,
+                with_semantic_ids,
+                allocator,
+            )),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for TSSpreadSignature<'_> {
+    type Cloned = TSSpreadSignature<'new_alloc>;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        TSSpreadSignature {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+            type_annotation: CloneIn::clone_in_impl(
+                &self.type_annotation,
+                with_semantic_ids,
+                allocator,
+            ),
         }
     }
 }
@@ -5622,6 +5647,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSAsExpression<'_> {
                 with_semantic_ids,
                 allocator,
             ),
+            r#override: CloneIn::clone_in_impl(&self.r#override, with_semantic_ids, allocator),
+            unchecked: CloneIn::clone_in_impl(&self.unchecked, with_semantic_ids, allocator),
         }
     }
 }
@@ -5664,6 +5691,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTypeAssertion<'_> {
                 allocator,
             ),
             expression: CloneIn::clone_in_impl(&self.expression, with_semantic_ids, allocator),
+            r#override: CloneIn::clone_in_impl(&self.r#override, with_semantic_ids, allocator),
+            unchecked: CloneIn::clone_in_impl(&self.unchecked, with_semantic_ids, allocator),
         }
     }
 }

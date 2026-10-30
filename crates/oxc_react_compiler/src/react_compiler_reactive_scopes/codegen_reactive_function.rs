@@ -2219,6 +2219,8 @@ fn ox_codegen_base_instruction_value<'a>(
                     span,
                     expr,
                     ox_reemit_ts_type(cx, ta),
+                    false,
+                    false,
                     &cx.ast,
                 ),
             };

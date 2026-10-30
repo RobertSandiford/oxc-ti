@@ -1768,6 +1768,12 @@ impl<'a> FormatWrite<'a> for AstNode<'_, 'a, TSPropertySignature<'a>> {
     }
 }
 
+impl<'a> FormatWrite<'a> for AstNode<'_, 'a, TSSpreadSignature<'a>> {
+    fn write(&self, f: &mut JsFormatter<'_, 'a>) {
+        write!(f, ["...", self.type_annotation()]);
+    }
+}
+
 struct FormatTSSignature<'a, 'b> {
     signature: &'b AstNode<'b, 'a, TSSignature<'a>>,
     next_signature: Option<AstNode<'b, 'a, TSSignature<'a>>>,
@@ -2099,7 +2105,11 @@ impl<'a> FormatWrite<'a> for AstNode<'_, 'a, TSTypeAssertion<'a>> {
         );
 
         let format_cast = format_with(|f| {
-            write!(f, ["<", group(&soft_block_indent(&self.type_annotation())), ">",]);
+            write!(f, ["<"]);
+            if self.r#override {
+                write!(f, [if self.unchecked { "override!" } else { "override" }, space()]);
+            }
+            write!(f, [group(&soft_block_indent(&self.type_annotation())), ">"]);
         });
 
         if break_after_cast {

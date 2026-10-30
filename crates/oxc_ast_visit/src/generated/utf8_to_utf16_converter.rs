@@ -977,6 +977,12 @@ impl<'a> VisitMut<'a> for Utf8ToUtf16Converter<'_> {
         self.convert_offset(&mut it.span.end);
     }
 
+    fn visit_ts_spread_signature(&mut self, it: &mut TSSpreadSignature<'a>) {
+        self.convert_offset(&mut it.span.start);
+        walk_mut::walk_ts_spread_signature(self, it);
+        self.convert_offset(&mut it.span.end);
+    }
+
     fn visit_ts_index_signature(&mut self, it: &mut TSIndexSignature<'a>) {
         self.convert_offset(&mut it.span.start);
         walk_mut::walk_ts_index_signature(self, it);

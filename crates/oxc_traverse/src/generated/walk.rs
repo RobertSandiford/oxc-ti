@@ -4998,8 +4998,29 @@ unsafe fn walk_ts_signature<'a, State, Tr: Traverse<'a, State>>(
         TSSignature::TSMethodSignature(node) => {
             walk_ts_method_signature(traverser, (&mut **node) as *mut _, ctx)
         }
+        TSSignature::TSSpreadSignature(node) => {
+            walk_ts_spread_signature(traverser, (&mut **node) as *mut _, ctx)
+        }
     }
     traverser.exit_ts_signature(&mut *node, ctx);
+}
+
+unsafe fn walk_ts_spread_signature<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut TSSpreadSignature<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_ts_spread_signature(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::TSSpreadSignatureTypeAnnotation(
+        ancestor::TSSpreadSignatureWithoutTypeAnnotation(node, PhantomData),
+    ));
+    walk_ts_type(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_TS_SPREAD_SIGNATURE_TYPE_ANNOTATION) as *mut TSType,
+        ctx,
+    );
+    ctx.pop_stack(pop_token);
+    traverser.exit_ts_spread_signature(&mut *node, ctx);
 }
 
 unsafe fn walk_ts_index_signature<'a, State, Tr: Traverse<'a, State>>(

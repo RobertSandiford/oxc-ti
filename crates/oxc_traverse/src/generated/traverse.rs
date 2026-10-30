@@ -2680,6 +2680,21 @@ pub trait Traverse<'a, State> {
     fn exit_ts_signature(&mut self, node: &mut TSSignature<'a>, ctx: &mut TraverseCtx<'a, State>) {}
 
     #[inline]
+    fn enter_ts_spread_signature(
+        &mut self,
+        node: &mut TSSpreadSignature<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+    #[inline]
+    fn exit_ts_spread_signature(
+        &mut self,
+        node: &mut TSSpreadSignature<'a>,
+        ctx: &mut TraverseCtx<'a, State>,
+    ) {
+    }
+
+    #[inline]
     fn enter_ts_index_signature(
         &mut self,
         node: &mut TSIndexSignature<'a>,

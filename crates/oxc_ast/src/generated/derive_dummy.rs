@@ -2785,9 +2785,22 @@ impl<'a> Dummy<'a> for TSPropertySignature<'a> {
 impl<'a> Dummy<'a> for TSSignature<'a> {
     /// Create a dummy [`TSSignature`].
     ///
-    /// Has cost of making 2 allocations (56 bytes).
+    /// Has cost of making 2 allocations (48 bytes).
     fn dummy(allocator: &'a Allocator) -> Self {
-        Self::TSPropertySignature(Dummy::dummy(allocator))
+        Self::TSSpreadSignature(Dummy::dummy(allocator))
+    }
+}
+
+impl<'a> Dummy<'a> for TSSpreadSignature<'a> {
+    /// Create a dummy [`TSSpreadSignature`].
+    ///
+    /// Has cost of making 1 allocation (16 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self {
+            node_id: Dummy::dummy(allocator),
+            span: Dummy::dummy(allocator),
+            type_annotation: Dummy::dummy(allocator),
+        }
     }
 }
 
@@ -3185,6 +3198,8 @@ impl<'a> Dummy<'a> for TSAsExpression<'a> {
             span: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
+            r#override: Dummy::dummy(allocator),
+            unchecked: Dummy::dummy(allocator),
         }
     }
 }
@@ -3213,6 +3228,8 @@ impl<'a> Dummy<'a> for TSTypeAssertion<'a> {
             span: Dummy::dummy(allocator),
             type_annotation: Dummy::dummy(allocator),
             expression: Dummy::dummy(allocator),
+            r#override: Dummy::dummy(allocator),
+            unchecked: Dummy::dummy(allocator),
         }
     }
 }

@@ -1052,6 +1052,11 @@ pub trait Visit<'a>: Sized {
     }
 
     #[inline]
+    fn visit_ts_spread_signature(&mut self, it: &TSSpreadSignature<'a>) {
+        walk_ts_spread_signature(self, it);
+    }
+
+    #[inline]
     fn visit_ts_index_signature(&mut self, it: &TSIndexSignature<'a>) {
         walk_ts_index_signature(self, it);
     }
@@ -3859,7 +3864,6 @@ pub mod walk {
         visitor.leave_node(kind);
     }
 
-    #[inline]
     pub fn walk_ts_signature<'a, V: Visit<'a>>(visitor: &mut V, it: &TSSignature<'a>) {
         // No `AstKind` for this type
         match it {
@@ -3872,7 +3876,17 @@ pub mod walk {
                 visitor.visit_ts_construct_signature_declaration(it)
             }
             TSSignature::TSMethodSignature(it) => visitor.visit_ts_method_signature(it),
+            TSSignature::TSSpreadSignature(it) => visitor.visit_ts_spread_signature(it),
         }
+    }
+
+    #[inline]
+    pub fn walk_ts_spread_signature<'a, V: Visit<'a>>(visitor: &mut V, it: &TSSpreadSignature<'a>) {
+        let kind = AstKind::TSSpreadSignature(visitor.alloc(it));
+        visitor.enter_node(kind);
+        visitor.visit_span(&it.span);
+        visitor.visit_ts_type(&it.type_annotation);
+        visitor.leave_node(kind);
     }
 
     #[inline]

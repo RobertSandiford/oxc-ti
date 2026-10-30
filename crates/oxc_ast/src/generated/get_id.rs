@@ -2938,6 +2938,22 @@ impl TSPropertySignature<'_> {
     }
 }
 
+impl TSSpreadSignature<'_> {
+    /// Get [`NodeId`] of [`TSSpreadSignature`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`TSSpreadSignature`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
 impl TSIndexSignature<'_> {
     /// Get [`NodeId`] of [`TSIndexSignature`].
     ///
@@ -5454,6 +5470,7 @@ impl TSSignature<'_> {
             Self::TSCallSignatureDeclaration(it) => it.node_id(),
             Self::TSConstructSignatureDeclaration(it) => it.node_id(),
             Self::TSMethodSignature(it) => it.node_id(),
+            Self::TSSpreadSignature(it) => it.node_id(),
         }
     }
     /// Set [`NodeId`] of [`TSSignature`].
@@ -5466,6 +5483,7 @@ impl TSSignature<'_> {
             Self::TSCallSignatureDeclaration(it) => it.set_node_id(node_id),
             Self::TSConstructSignatureDeclaration(it) => it.set_node_id(node_id),
             Self::TSMethodSignature(it) => it.set_node_id(node_id),
+            Self::TSSpreadSignature(it) => it.set_node_id(node_id),
         }
     }
 }

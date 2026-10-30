@@ -301,6 +301,25 @@ fn type_from_declarations() {
 }
 
 #[test]
+fn override_casts() {
+    test_ts_same("const o1 = u override string;\n");
+    test_ts_same("const o2 = s override! number;\n");
+    test_ts_same("const o3 = <override string>u;\n");
+    test_ts_same("const o4 = <override! number>s;\n");
+    test_ts_same("const o5 = (s override! number) + 1;\n");
+    test_ts("const o6 = s override !number;", "const o6 = s override! number;\n");
+}
+
+#[test]
+fn type_literal_spreads() {
+    test_ts(
+        "type S = { ...A, b: number, ...B };",
+        "type S = {\n\t...A;\n\tb: number;\n\t...B;\n};\n",
+    );
+    test_ts("type S = { ...A | undefined };", "type S = {\n\t...A | undefined;\n};\n");
+}
+
+#[test]
 fn brace_after_colon_return_type() {
     test_ts("function retR(): r { return \"x\"; }", "function retR(): r {\n\treturn \"x\";\n}\n");
     test_ts("function f(): r {}", "function f(): r {}\n");

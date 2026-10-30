@@ -16,7 +16,11 @@ impl<'a> FormatWrite<'a> for AstNode<'_, 'a, TSAsExpression<'a>> {
             &self.expression(),
             &self.type_annotation(),
             is_callee_or_object,
-            "as",
+            match (self.r#override, self.unchecked) {
+                (false, _) => "as",
+                (true, false) => "override",
+                (true, true) => "override!",
+            },
             f,
         );
     }

@@ -416,6 +416,8 @@ impl<'a> ReplaceWith<'a> for TSPropertySignature<'a> {}
 
 impl<'a> ReplaceWith<'a> for TSSignature<'a> {}
 
+impl<'a> ReplaceWith<'a> for TSSpreadSignature<'a> {}
+
 impl<'a> ReplaceWith<'a> for TSIndexSignature<'a> {}
 
 impl<'a> ReplaceWith<'a> for TSCallSignatureDeclaration<'a> {}

@@ -2017,7 +2017,15 @@ impl GetSpanMut for TSSignature<'_> {
             Self::TSCallSignatureDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSConstructSignatureDeclaration(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSMethodSignature(it) => GetSpanMut::span_mut(&mut **it),
+            Self::TSSpreadSignature(it) => GetSpanMut::span_mut(&mut **it),
         }
+    }
+}
+
+impl GetSpanMut for TSSpreadSignature<'_> {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
     }
 }
 

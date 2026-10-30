@@ -465,6 +465,32 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         TSType::new_ts_type_operator_type(self.end_span(start), operator, false, None, ty, self)
     }
 
+    /// After `<` in a type assertion: TightScript's `<override T>x` and `<override! T>x`.
+    /// Returns whether `override` and `!` were consumed. Otherwise `override` starts a type of that name.
+    pub(crate) fn eat_override_assertion_keyword(&mut self) -> (bool, bool) {
+        if !self.at(Kind::Override) || !self.lookahead(Self::next_is_override_assertion_type) {
+            return (false, false);
+        }
+        self.bump_any();
+        (true, self.eat(Kind::Bang))
+    }
+
+    fn next_is_override_assertion_type(&mut self) -> bool {
+        self.bump_any();
+        if self.at(Kind::Bang) {
+            return true;
+        }
+        if self.cur_token().is_on_new_line()
+            || matches!(
+                self.cur_kind(),
+                Kind::Pipe | Kind::Amp | Kind::LAngle | Kind::LBrack | Kind::Question | Kind::Star
+            )
+        {
+            return false;
+        }
+        self.is_start_of_type(false)
+    }
+
     /// TightScript: `distribute Source as Body` or `distribute Source Member as Body`.
     /// A type start on the same line makes `distribute` the keyword; after `{` or `[`, which can
     /// also follow a type named `distribute` (a function body, `distribute[]`), only a later `as` does.
@@ -478,6 +504,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             self.cur_kind(),
             Kind::As
                 | Kind::Satisfies
+                | Kind::Override
                 | Kind::Pipe
                 | Kind::Amp
                 | Kind::LAngle
@@ -758,7 +785,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
             // What follows a type: an initializer (`x: r = w (b)`), an operator (`v as r - 1`),
             // another assertion, or a type return's `and type`. Only `-owned` and `-exact` still make an operand.
-            Kind::Eq | Kind::Plus | Kind::As | Kind::Satisfies => return false,
+            Kind::Eq | Kind::Plus | Kind::As | Kind::Satisfies | Kind::Override => return false,
             Kind::Minus => return self.is_start_of_disown_type_operator(),
             _ if self.at_word("and") && self.lexer.peek_token().kind() == Kind::Type => {
                 return false;
@@ -2161,6 +2188,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             modifiers.contains(ModifierKind::Static),
             self,
         )
+    }
+
+    /// TightScript: `...T` among the members of an object type literal.
+    pub(crate) fn parse_ts_spread_signature(&mut self) -> TSSignature<'a> {
+        let start = self.cur_start();
+        self.expect(Kind::Dot3);
+        let type_annotation = self.parse_ts_type();
+        self.parse_type_member_semicolon();
+        TSSignature::new_ts_spread_signature(self.end_span(start), type_annotation, self)
     }
 
     fn parse_type_member_semicolon(&mut self) {

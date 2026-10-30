@@ -187,6 +187,7 @@ pub enum AstNodes<'parent, 'a> {
     TSInterfaceDeclaration(&'parent AstNode<'parent, 'a, TSInterfaceDeclaration<'a>>),
     TSInterfaceBody(&'parent AstNode<'parent, 'a, TSInterfaceBody<'a>>),
     TSPropertySignature(&'parent AstNode<'parent, 'a, TSPropertySignature<'a>>),
+    TSSpreadSignature(&'parent AstNode<'parent, 'a, TSSpreadSignature<'a>>),
     TSIndexSignature(&'parent AstNode<'parent, 'a, TSIndexSignature<'a>>),
     TSCallSignatureDeclaration(&'parent AstNode<'parent, 'a, TSCallSignatureDeclaration<'a>>),
     TSMethodSignature(&'parent AstNode<'parent, 'a, TSMethodSignature<'a>>),
@@ -395,6 +396,7 @@ pub enum AstNodeKind<'parent, 'a> {
     TSInterfaceDeclaration(AstNode<'parent, 'a, TSInterfaceDeclaration<'a>>),
     TSInterfaceBody(AstNode<'parent, 'a, TSInterfaceBody<'a>>),
     TSPropertySignature(AstNode<'parent, 'a, TSPropertySignature<'a>>),
+    TSSpreadSignature(AstNode<'parent, 'a, TSSpreadSignature<'a>>),
     TSIndexSignature(AstNode<'parent, 'a, TSIndexSignature<'a>>),
     TSCallSignatureDeclaration(AstNode<'parent, 'a, TSCallSignatureDeclaration<'a>>),
     TSMethodSignature(AstNode<'parent, 'a, TSMethodSignature<'a>>),
@@ -602,6 +604,7 @@ impl<'a> AstNodeKind<'_, 'a> {
             Self::TSInterfaceDeclaration(n) => AstNodes::TSInterfaceDeclaration(n),
             Self::TSInterfaceBody(n) => AstNodes::TSInterfaceBody(n),
             Self::TSPropertySignature(n) => AstNodes::TSPropertySignature(n),
+            Self::TSSpreadSignature(n) => AstNodes::TSSpreadSignature(n),
             Self::TSIndexSignature(n) => AstNodes::TSIndexSignature(n),
             Self::TSCallSignatureDeclaration(n) => AstNodes::TSCallSignatureDeclaration(n),
             Self::TSMethodSignature(n) => AstNodes::TSMethodSignature(n),
@@ -808,6 +811,7 @@ impl GetSpan for AstNodeKind<'_, '_> {
             Self::TSInterfaceDeclaration(n) => n.span(),
             Self::TSInterfaceBody(n) => n.span(),
             Self::TSPropertySignature(n) => n.span(),
+            Self::TSSpreadSignature(n) => n.span(),
             Self::TSIndexSignature(n) => n.span(),
             Self::TSCallSignatureDeclaration(n) => n.span(),
             Self::TSMethodSignature(n) => n.span(),
@@ -1018,6 +1022,7 @@ impl<'parent, 'a> AstNodes<'parent, 'a> {
             Self::TSInterfaceDeclaration(n) => n.span(),
             Self::TSInterfaceBody(n) => n.span(),
             Self::TSPropertySignature(n) => n.span(),
+            Self::TSSpreadSignature(n) => n.span(),
             Self::TSIndexSignature(n) => n.span(),
             Self::TSCallSignatureDeclaration(n) => n.span(),
             Self::TSMethodSignature(n) => n.span(),
@@ -1225,6 +1230,7 @@ impl<'parent, 'a> AstNodes<'parent, 'a> {
             Self::TSInterfaceDeclaration(n) => n.parent(),
             Self::TSInterfaceBody(n) => n.parent(),
             Self::TSPropertySignature(n) => n.parent(),
+            Self::TSSpreadSignature(n) => n.parent(),
             Self::TSIndexSignature(n) => n.parent(),
             Self::TSCallSignatureDeclaration(n) => n.parent(),
             Self::TSMethodSignature(n) => n.parent(),
@@ -1427,6 +1433,7 @@ impl<'parent, 'a> AstNodes<'parent, 'a> {
             Self::TSInterfaceDeclaration(_) => "TSInterfaceDeclaration",
             Self::TSInterfaceBody(_) => "TSInterfaceBody",
             Self::TSPropertySignature(_) => "TSPropertySignature",
+            Self::TSSpreadSignature(_) => "TSSpreadSignature",
             Self::TSIndexSignature(_) => "TSIndexSignature",
             Self::TSCallSignatureDeclaration(_) => "TSCallSignatureDeclaration",
             Self::TSMethodSignature(_) => "TSMethodSignature",
@@ -9023,7 +9030,38 @@ impl<'parent, 'a> AstNode<'parent, 'a, TSSignature<'a>> {
                 parent,
                 following_span_start,
             }),
+            TSSignature::TSSpreadSignature(s) => AstNodeKind::TSSpreadSignature(AstNode {
+                inner: s.as_ref(),
+                parent,
+                following_span_start,
+            }),
         }
+    }
+}
+
+impl<'parent, 'a> AstNode<'parent, 'a, TSSpreadSignature<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
+    pub fn type_annotation(&self) -> AstNode<'_, 'a, TSType<'a>> {
+        let following_span_start = self.following_span_start;
+        AstNode {
+            inner: &self.inner.type_annotation,
+            parent: AstNodes::TSSpreadSignature(self),
+            following_span_start,
+        }
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
     }
 }
 
@@ -10154,6 +10192,16 @@ impl<'parent, 'a> AstNode<'parent, 'a, TSAsExpression<'a>> {
         }
     }
 
+    #[inline]
+    pub fn r#override(&self) -> bool {
+        self.inner.r#override
+    }
+
+    #[inline]
+    pub fn unchecked(&self) -> bool {
+        self.inner.unchecked
+    }
+
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
         format_leading_comments(self.span()).fmt(f);
     }
@@ -10224,6 +10272,16 @@ impl<'parent, 'a> AstNode<'parent, 'a, TSTypeAssertion<'a>> {
             parent: AstNodes::TSTypeAssertion(self),
             following_span_start,
         }
+    }
+
+    #[inline]
+    pub fn r#override(&self) -> bool {
+        self.inner.r#override
+    }
+
+    #[inline]
+    pub fn unchecked(&self) -> bool {
+        self.inner.unchecked
     }
 
     pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
