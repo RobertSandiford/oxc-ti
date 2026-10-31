@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "$schema": "./npm/oxlint/configuration_schema.json",
   "plugins": [
     "typescript",
     "unicorn",
@@ -118,6 +118,7 @@
   ],
   "options": {
     "typeAware": true,
-    "typeCheck": true
+    "typeCheck": true,
+    "ignoreUnknownTsCompilerOptions": ["ti_legacyDeclarations", "ti_legacyDeclarationsErrorLoc"]
   }
 }

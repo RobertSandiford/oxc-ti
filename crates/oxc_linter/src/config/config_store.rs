@@ -392,6 +392,17 @@ impl ConfigStore {
         self.base.base.config.options.respect_eslint_disable_directives.unwrap_or(true)
     }
 
+    /// `tsconfig.json` compiler option names that `tsgolint` should not report as unknown.
+    pub fn ignore_unknown_ts_compiler_options(&self) -> &[String] {
+        self.base
+            .base
+            .config
+            .options
+            .ignore_unknown_ts_compiler_options
+            .as_deref()
+            .unwrap_or_default()
+    }
+
     pub(crate) fn disable_rule_comment_location(&self) -> DisableRuleCommentLocation {
         self.base.base.config.options.disable_rule_comment_location.unwrap_or_default()
     }

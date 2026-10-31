@@ -596,6 +596,10 @@ impl TsGoLintState {
                 source_overrides,
                 report_syntactic: self.type_check,
                 report_semantic: self.type_check,
+                ignore_unknown_ts_compiler_options: self
+                    .config_store
+                    .ignore_unknown_ts_compiler_options()
+                    .to_vec(),
             };
         }
 
@@ -642,6 +646,10 @@ impl TsGoLintState {
             source_overrides,
             report_syntactic: self.type_check,
             report_semantic: self.type_check,
+            ignore_unknown_ts_compiler_options: self
+                .config_store
+                .ignore_unknown_ts_compiler_options()
+                .to_vec(),
         }
     }
 }
@@ -669,6 +677,9 @@ pub struct Payload {
     pub source_overrides: Option<FxHashMap<String, String>>,
     pub report_syntactic: bool,
     pub report_semantic: bool,
+    /// `tsconfig.json` compiler option names tsgolint should not report as unknown.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ignore_unknown_ts_compiler_options: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1428,13 +1439,55 @@ pub fn try_find_tsgolint_executable(cwd: &Path) -> Result<PathBuf, String> {
 
 #[cfg(test)]
 mod test {
+    use std::path::Path;
+
     use oxc_diagnostics::{LabeledSpan, OxcCode, Severity};
     use oxc_span::Span;
+    use rustc_hash::FxHashMap;
+    use serde_json::json;
 
     use crate::{
+        ConfigStore, ConfigStoreBuilder, ExternalPluginStore, Oxlintrc,
         fixer::{FixKind, Message, PossibleFixes},
-        tsgolint::{Fix, LabeledRange, Range, RuleMessage, Suggestion, TsGoLintRuleDiagnostic},
+        tsgolint::{
+            Fix, LabeledRange, Range, RuleMessage, Suggestion, TsGoLintRuleDiagnostic,
+            TsGoLintState,
+        },
     };
+
+    fn payload_json(oxlintrc: serde_json::Value) -> serde_json::Value {
+        let oxlintrc: Oxlintrc = serde_json::from_value(oxlintrc).unwrap();
+        let mut plugin_store = ExternalPluginStore::default();
+        let config =
+            ConfigStoreBuilder::from_oxlintrc(true, oxlintrc, None, &mut plugin_store, None)
+                .unwrap()
+                .build(&mut plugin_store)
+                .unwrap();
+        let store = ConfigStore::new(config, FxHashMap::default(), plugin_store);
+
+        let state = TsGoLintState::new(Path::new("."), store, FixKind::None);
+        let payload = state.json_input(&[], None, &mut FxHashMap::default());
+        serde_json::to_value(payload).unwrap()
+    }
+
+    #[test]
+    fn payload_carries_ignore_unknown_ts_compiler_options() {
+        let payload = payload_json(json!({
+            "options": { "ignoreUnknownTsCompilerOptions": ["ti_legacyDeclarations", "ti_other"] }
+        }));
+
+        assert_eq!(
+            payload["ignore_unknown_ts_compiler_options"],
+            json!(["ti_legacyDeclarations", "ti_other"])
+        );
+    }
+
+    #[test]
+    fn payload_omits_ignore_unknown_ts_compiler_options_when_unset() {
+        let payload = payload_json(json!({}));
+
+        assert!(payload.get("ignore_unknown_ts_compiler_options").is_none());
+    }
 
     #[test]
     fn test_message_from_tsgo_lint_diagnostic_basic() {

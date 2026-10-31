@@ -73,6 +73,12 @@ pub struct OxlintOptions {
     /// Only supported in the root configuration file.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_rule_comment_location: Option<DisableRuleCommentLocation>,
+    /// `tsconfig.json` compiler option names that `tsgolint` should not report as unknown,
+    /// such as `["myCustomOption"]`.
+    ///
+    /// Only supported in the root configuration file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ignore_unknown_ts_compiler_options: Option<Vec<String>>,
 }
 
 /// Placement of the comment created by the "Disable rule for this line" fix.
@@ -94,6 +100,7 @@ impl OxlintOptions {
             && self.report_unused_disable_directives.is_none()
             && self.respect_eslint_disable_directives.is_none()
             && self.disable_rule_comment_location.is_none()
+            && self.ignore_unknown_ts_compiler_options.is_none()
     }
 
     #[must_use]
@@ -112,6 +119,10 @@ impl OxlintOptions {
             disable_rule_comment_location: self
                 .disable_rule_comment_location
                 .or(other.disable_rule_comment_location),
+            ignore_unknown_ts_compiler_options: self
+                .ignore_unknown_ts_compiler_options
+                .clone()
+                .or_else(|| other.ignore_unknown_ts_compiler_options.clone()),
         }
     }
 }
@@ -684,6 +695,15 @@ mod test {
             json!({ "options": { "disableRuleCommentLocation": "endOfFile" } }),
         );
         assert!(config.is_err());
+
+        let config: Oxlintrc = serde_json::from_value(
+            json!({ "options": { "ignoreUnknownTsCompilerOptions": ["ti_legacyDeclarations"] } }),
+        )
+        .unwrap();
+        assert_eq!(
+            config.options.ignore_unknown_ts_compiler_options,
+            Some(vec!["ti_legacyDeclarations".to_string()])
+        );
     }
 
     #[test]

@@ -447,6 +447,12 @@ impl<'a> ConfigLoader<'a> {
                     ));
                     continue;
                 }
+                if options.ignore_unknown_ts_compiler_options.is_some() {
+                    errors.push(ConfigLoadError::Diagnostic(
+                        nested_ignore_unknown_ts_compiler_options_not_supported(&path),
+                    ));
+                    continue;
+                }
             }
 
             let builder = match ConfigStoreBuilder::from_oxlintrc(
@@ -756,6 +762,14 @@ fn nested_disable_rule_comment_location_not_supported(path: &Path) -> OxcDiagnos
     .with_help("Move `options.disableRuleCommentLocation` to the root configuration file.")
 }
 
+fn nested_ignore_unknown_ts_compiler_options_not_supported(path: &Path) -> OxcDiagnostic {
+    OxcDiagnostic::error(format!(
+        "The `options.ignoreUnknownTsCompilerOptions` option is only supported in the root config, but it was found in {}.",
+        path.display()
+    ))
+    .with_help("Move `options.ignoreUnknownTsCompilerOptions` to the root configuration file.")
+}
+
 #[cfg(test)]
 mod test {
     use std::path::PathBuf;
@@ -956,6 +970,27 @@ mod test {
         std::fs::write(
             &nested_path,
             r#"{ "options": { "disableRuleCommentLocation": "sameLine" } }"#,
+        )
+        .unwrap();
+
+        let mut external_plugin_store = ExternalPluginStore::new(false);
+        let mut loader = ConfigLoader::new(None, &mut external_plugin_store, &[], None);
+        let (_configs, errors) = loader.load_discovered_with_root_dir(
+            root_dir.path(),
+            [DiscoveredConfigFile::Json(nested_path)],
+        );
+        assert_eq!(errors.len(), 1);
+        assert!(matches!(errors[0], ConfigLoadError::Diagnostic(_)));
+    }
+
+    #[test]
+    fn test_nested_json_config_rejects_ignore_unknown_ts_compiler_options() {
+        let root_dir = tempfile::tempdir().unwrap();
+        let nested_path = root_dir.path().join("nested/.oxlintrc.json");
+        std::fs::create_dir_all(nested_path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &nested_path,
+            r#"{ "options": { "ignoreUnknownTsCompilerOptions": ["ti_legacyDeclarations"] } }"#,
         )
         .unwrap();
 

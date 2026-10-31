@@ -17167,6 +17167,14 @@
           ],
           "markdownDescription": "Where the editor's \"Disable rule for this line\" fix puts its comment.\n\n- `\"separateLine\"` inserts `// oxlint-disable-next-line rule` on a new line above.\n- `\"sameLine\"` appends `// oxlint-disable-line rule` to the end of the line.\n\nDefaults to `\"separateLine\"`.\nOnly supported in the root configuration file."
         },
+        "ignoreUnknownTsCompilerOptions": {
+          "description": "`tsconfig.json` compiler option names that `tsgolint` should not report as unknown,\nsuch as `[\"myCustomOption\"]`.\n\nOnly supported in the root configuration file.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "`tsconfig.json` compiler option names that `tsgolint` should not report as unknown,\nsuch as `[\"myCustomOption\"]`.\n\nOnly supported in the root configuration file."
+        },
         "maxWarnings": {
           "description": "Specify a warning threshold. Exits with an error status if warnings exceed this value.\n\nEquivalent to passing `--max-warnings` on the CLI.",
           "type": "integer",

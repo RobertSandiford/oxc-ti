@@ -815,6 +815,13 @@ export interface OxlintOptions {
    */
   disableRuleCommentLocation?: DisableRuleCommentLocation;
   /**
+   * `tsconfig.json` compiler option names that `tsgolint` should not report as unknown,
+   * such as `["myCustomOption"]`.
+   *
+   * Only supported in the root configuration file.
+   */
+  ignoreUnknownTsCompilerOptions?: string[];
+  /**
    * Specify a warning threshold. Exits with an error status if warnings exceed this value.
    *
    * Equivalent to passing `--max-warnings` on the CLI.
